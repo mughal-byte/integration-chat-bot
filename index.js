@@ -23,10 +23,6 @@ gsapScript.integrity =
 gsapScript.crossOrigin = "anonymous";
 gsapScript.referrerPolicy = "no-referrer";
 
-gsapScript.onload = () => {
-  console.log("GSAP ready");
-};
-
 document.head.appendChild(gsapScript);
 
 (function () {
@@ -38,9 +34,10 @@ document.head.appendChild(gsapScript);
     AI_TEXT_MODEL: "2",
     COMP: "15",
     API_KEY: "buildor_555210",
-    SESSION_KEY: "222234",
+    SESSION_KEY: localStorage.getItem("chat_session_key") || generateSessionKey(),
   };
 
+  console.log(CONFIG.SESSION_KEY)
   // === DOM Elements Storage ===
   const elements = {};
 
@@ -3247,11 +3244,12 @@ document.head.appendChild(gsapScript);
 
     try {
       let sessionKey = localStorage.getItem("chat_session_key");
+
       if (!sessionKey) {
         sessionKey =
           "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem("chat_session_key", sessionKey);
-      }
+
+        localStorage.setItem("chat_session_key", sessionKey);}
 
       // Direct API call to Buildors
       const url = `${CONFIG.AI_BASE_URL}?ai_text_model=${CONFIG.AI_TEXT_MODEL}&comp=${CONFIG.COMP}&query=${encodeURIComponent(userMessage)}&session_key=${sessionKey}&api_key=${CONFIG.API_KEY}`;
