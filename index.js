@@ -34,8 +34,7 @@ document.head.appendChild(gsapScript);
     AI_TEXT_MODEL: "2",
     COMP: "15",
     API_KEY: "buildor_555210",
-    SESSION_KEY:
-      localStorage.getItem("chat_session_key") || generateSessionKey(),
+  
   };
 
   console.log(CONFIG.SESSION_KEY);
@@ -1607,7 +1606,7 @@ document.head.appendChild(gsapScript);
           MozOsxFontSmoothing: "grayscale",
         },
       },
-      ["Text Support"],
+      ["Customer support"],
     );
 
     const descDiv = createElement(
@@ -1622,7 +1621,7 @@ document.head.appendChild(gsapScript);
         },
       },
       [
-        "Automate conversations and delight customers with our intelligent ChatBot solution...",
+        "Let's chat with our Customer Support AI! It’s here to help you instantly with any questions or issues.",
       ],
     );
 
@@ -1845,7 +1844,7 @@ document.head.appendChild(gsapScript);
           {
             style: { fontSize: "12px", color: "#555" },
           },
-          ["Buildors"],
+          ["Buildors.com"],
         ),
       ],
     );
@@ -1928,7 +1927,7 @@ document.head.appendChild(gsapScript);
 
     cardContent.appendChild(iconContainer);
     cardContent.appendChild(
-      createElement("div", { className: "fw-bold p-1" }, ["Text Support"]),
+      createElement("div", { className: "fw-bold p-1" }, ["Feedback ?"]),
     );
 
     const assistantInfo = createElement("div", {
@@ -2030,35 +2029,35 @@ document.head.appendChild(gsapScript);
 
     const welcomeTitle = createElement("h1", {}, ["Hello 👋"]);
     const subtitle = createElement("div", { className: "subtitle" }, [
-      "Welcome to ChatBot!",
+      "Welcome to Buildors!",
     ]);
     const desc = createElement("div", { className: "desc" }, [
-      "Sign up free or talk with our product experts.",
+      // "Sign up free or talk with our product experts.",
     ]);
 
     const freeTrialBtn = createElement(
-      "button",
-      {
-        className: "btn-danger",
-        style: {
-          width: "100%",
-          padding: "12px",
-          borderRadius: "10px",
-          border: "none",
-          cursor: "pointer",
-          fontSize: "15px",
-          fontWeight: "600",
-          marginBottom: "10px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-          color: "#ffffff",
-          transition: "transform 0.3s ease",
-          background: "#f22727",
-        },
-      },
-      ["Free Trial"],
+      // "button",
+      // {
+      //   className: "btn-danger",
+      //   style: {
+      //     width: "100%",
+      //     padding: "12px",
+      //     borderRadius: "10px",
+      //     border: "none",
+      //     cursor: "pointer",
+      //     fontSize: "15px",
+      //     fontWeight: "600",
+      //     marginBottom: "10px",
+      //     display: "flex",
+      //     alignItems: "center",
+      //     justifyContent: "center",
+      //     gap: "8px",
+      //     color: "#ffffff",
+      //     transition: "transform 0.3s ease",
+      //     background: "#f22727",
+      //   },
+      // },
+      // ["Free Trial"],
     );
 
     const letsChatBtn = createElement(
@@ -2351,7 +2350,7 @@ document.head.appendChild(gsapScript);
           {
             style: { fontSize: "12px", color: "#555" },
           },
-          ["Buildors"],
+          ["Buildors.com"],
         ),
       ],
     );
@@ -2797,6 +2796,37 @@ document.head.appendChild(gsapScript);
     return overlay;
   }
 
+
+
+  function doPost(e) {
+  try {
+    var email = e.parameter.email || "";
+    if (!email || !email.includes("@")) {
+      return ContentService.createTextOutput("Error: Invalid email").setMimeType(ContentService.MimeType.TEXT);
+    }
+
+    var subject = "Subscription Confirmed! 🎉";
+    var body = `
+<h2>Thank you for subscribing!</h2>
+<p>Hi,</p>
+<p>You have successfully subscribed with <b>${email}</b>.</p>
+<p>We will keep you updated with new features and news from Buildors.</p>
+<p style="color:#666; font-size:0.9em;">Didn't subscribe? Just ignore this email.</p>
+<p>Best regards,<br>Buildors Team</p>
+    `;
+
+    MailApp.sendEmail({
+      to: email,
+      subject: subject,
+      htmlBody: body
+    });
+
+    return ContentService.createTextOutput("Success").setMimeType(ContentService.MimeType.TEXT);
+  } catch (err) {
+    return ContentService.createTextOutput("Error: " + err.message).setMimeType(ContentService.MimeType.TEXT);
+  }
+}
+
   function createFeedbackModal() {
     const overlay = createElement("div", {
       id: "feedbackOverlay",
@@ -2905,10 +2935,44 @@ document.head.appendChild(gsapScript);
       });
 
       // Form submission
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        window.handleFeedbackSubmit(e);
-      });
+form.addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const email = emailInput.value.trim();
+  if (!email || !email.includes("@")) {
+    alert("Please enter a valid email address.");
+    return;
+  }
+
+  subscribeButton.disabled = true;
+  subscribeButton.textContent = "Subscribing...";
+
+  try {
+    const formData = new FormData();
+    formData.append("email", email);
+
+    const response = await fetch("YOUR_APPS_SCRIPT_WEB_APP_URL_HERE", {  // ← yahan URL daal
+      method: "POST",
+      body: formData
+    });
+
+    const result = await response.text();
+
+    if (result === "Success") {
+      alert("Thank you! Subscription confirmed — check your inbox. 🎉");
+      window.hideEmailSubscription();
+      form.reset();
+    } else {
+      alert("Error: " + result);
+    }
+  } catch (err) {
+    alert("Network error. Please try again.");
+    console.error(err);
+  } finally {
+    subscribeButton.disabled = false;
+    subscribeButton.textContent = "Subscribe";
+  }
+});
 
       // Feedback type button clicks
       feedbackTypeButtons.addEventListener("click", function (e) {
