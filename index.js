@@ -34,10 +34,11 @@ document.head.appendChild(gsapScript);
     AI_TEXT_MODEL: "2",
     COMP: "15",
     API_KEY: "buildor_555210",
-    SESSION_KEY: localStorage.getItem("chat_session_key") || generateSessionKey(),
+    SESSION_KEY:
+      localStorage.getItem("chat_session_key") || generateSessionKey(),
   };
 
-  console.log(CONFIG.SESSION_KEY)
+  console.log(CONFIG.SESSION_KEY);
   // === DOM Elements Storage ===
   const elements = {};
 
@@ -2187,8 +2188,8 @@ document.head.appendChild(gsapScript);
     });
     const inputPreview = createElement("div", {
       id: "inputPreview",
-      className: "d-flex flex-wrap gap-2 position-absolute top-0 start-0 p-2",
-      style: { zIndex: "10" },
+      className: "d-flex flex-wrap gap-2 position-absolute start-0 p-2",
+      style: { zIndex: "10", bottom: "75px", left: "0px", maxWidth: "100%" },
     });
 
     const plusButton = createElement(
@@ -3249,7 +3250,8 @@ document.head.appendChild(gsapScript);
         sessionKey =
           "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
 
-        localStorage.setItem("chat_session_key", sessionKey);}
+        localStorage.setItem("chat_session_key", sessionKey);
+      }
 
       // Direct API call to Buildors
       const url = `${CONFIG.AI_BASE_URL}?ai_text_model=${CONFIG.AI_TEXT_MODEL}&comp=${CONFIG.COMP}&query=${encodeURIComponent(userMessage)}&session_key=${sessionKey}&api_key=${CONFIG.API_KEY}`;
