@@ -3416,7 +3416,12 @@ document.head.appendChild(gsapScript);
         localStorage.setItem("chat_session_key", sessionKey);
       }
 
+
       // Direct API call to Buildors
+
+      // Direct API call to Buildors
+      // Direct API call to Buildors
+
       const url = `${CONFIG.AI_BASE_URL}?ai_text_model=${CONFIG.AI_TEXT_MODEL}&comp=${CONFIG.COMP}&query=${encodeURIComponent(userMessage)}&session_key=${sessionKey}&api_key=${CONFIG.API_KEY}`;
 
       const response = await fetch(url);
