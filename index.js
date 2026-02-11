@@ -34,7 +34,7 @@ document.head.appendChild(gsapScript);
     AI_TEXT_MODEL: "2",
     COMP: "15",
     API_KEY: "buildor_555210",
-  
+
   };
 
   console.log(CONFIG.SESSION_KEY);
@@ -2799,14 +2799,14 @@ document.head.appendChild(gsapScript);
 
 
   function doPost(e) {
-  try {
-    var email = e.parameter.email || "";
-    if (!email || !email.includes("@")) {
-      return ContentService.createTextOutput("Error: Invalid email").setMimeType(ContentService.MimeType.TEXT);
-    }
+    try {
+      var email = e.parameter.email || "";
+      if (!email || !email.includes("@")) {
+        return ContentService.createTextOutput("Error: Invalid email").setMimeType(ContentService.MimeType.TEXT);
+      }
 
-    var subject = "Subscription Confirmed! 🎉";
-    var body = `
+      var subject = "Subscription Confirmed! 🎉";
+      var body = `
 <h2>Thank you for subscribing!</h2>
 <p>Hi,</p>
 <p>You have successfully subscribed with <b>${email}</b>.</p>
@@ -2815,17 +2815,17 @@ document.head.appendChild(gsapScript);
 <p>Best regards,<br>Buildors Team</p>
     `;
 
-    MailApp.sendEmail({
-      to: email,
-      subject: subject,
-      htmlBody: body
-    });
+      MailApp.sendEmail({
+        to: email,
+        subject: subject,
+        htmlBody: body
+      });
 
-    return ContentService.createTextOutput("Success").setMimeType(ContentService.MimeType.TEXT);
-  } catch (err) {
-    return ContentService.createTextOutput("Error: " + err.message).setMimeType(ContentService.MimeType.TEXT);
+      return ContentService.createTextOutput("Success").setMimeType(ContentService.MimeType.TEXT);
+    } catch (err) {
+      return ContentService.createTextOutput("Error: " + err.message).setMimeType(ContentService.MimeType.TEXT);
+    }
   }
-}
 
   function createFeedbackModal() {
     const overlay = createElement("div", {
@@ -2935,44 +2935,44 @@ document.head.appendChild(gsapScript);
       });
 
       // Form submission
-form.addEventListener("submit", async function (e) {
-  e.preventDefault();
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
 
-  const email = emailInput.value.trim();
-  if (!email || !email.includes("@")) {
-    alert("Please enter a valid email address.");
-    return;
-  }
+        const email = emailInput.value.trim();
+        if (!email || !email.includes("@")) {
+          alert("Please enter a valid email address.");
+          return;
+        }
 
-  subscribeButton.disabled = true;
-  subscribeButton.textContent = "Subscribing...";
+        subscribeButton.disabled = true;
+        subscribeButton.textContent = "Subscribing...";
 
-  try {
-    const formData = new FormData();
-    formData.append("email", email);
+        try {
+          const formData = new FormData();
+          formData.append("email", email);
 
-    const response = await fetch("YOUR_APPS_SCRIPT_WEB_APP_URL_HERE", {  // ← yahan URL daal
-      method: "POST",
-      body: formData
-    });
+          const response = await fetch("YOUR_APPS_SCRIPT_WEB_APP_URL_HERE", {  // ← yahan URL daal
+            method: "POST",
+            body: formData
+          });
 
-    const result = await response.text();
+          const result = await response.text();
 
-    if (result === "Success") {
-      alert("Thank you! Subscription confirmed — check your inbox. 🎉");
-      window.hideEmailSubscription();
-      form.reset();
-    } else {
-      alert("Error: " + result);
-    }
-  } catch (err) {
-    alert("Network error. Please try again.");
-    console.error(err);
-  } finally {
-    subscribeButton.disabled = false;
-    subscribeButton.textContent = "Subscribe";
-  }
-});
+          if (result === "Success") {
+            alert("Thank you! Subscription confirmed — check your inbox. 🎉");
+            window.hideEmailSubscription();
+            form.reset();
+          } else {
+            alert("Error: " + result);
+          }
+        } catch (err) {
+          alert("Network error. Please try again.");
+          console.error(err);
+        } finally {
+          subscribeButton.disabled = false;
+          subscribeButton.textContent = "Subscribe";
+        }
+      });
 
       // Feedback type button clicks
       feedbackTypeButtons.addEventListener("click", function (e) {
@@ -3237,7 +3237,109 @@ form.addEventListener("submit", async function (e) {
       }, 300);
     }
   };
+  async function createTypingEffect(text) {
+    return new Promise((resolve) => {
+      try {
+        // Create the AI message row structure
+        const row = createElement("div", { className: "chat-ai-row" });
 
+        // Avatar
+        const avatar = createElement("div", { className: "chat-ai-avatar" });
+        avatar.appendChild(
+          createElement("img", {
+            src: "public/images/Vector.png",
+            alt: "AI",
+          })
+        );
+
+        // Bubble container
+        const bubble = createElement("div", { className: "chat-bubble ai" });
+        const innerDiv = createElement("div", { className: "ai-bubble-inner" });
+
+        // Create a span for the typing effect
+        const textSpan = createElement("span", {
+          className: "ai-text typing-active"
+        });
+
+        // Create cursor element
+        const cursor = createElement("span", {
+          className: "typing-cursor",
+          style: {
+            display: "inline-block",
+            width: "2px",
+            height: "16px",
+            backgroundColor: "#3255a0",
+            marginLeft: "2px",
+            animation: "blink 1s infinite"
+          }
+        });
+
+        innerDiv.appendChild(textSpan);
+        innerDiv.appendChild(cursor);
+        bubble.appendChild(innerDiv);
+        row.appendChild(avatar);
+        row.appendChild(bubble);
+
+        // Add to conversation body
+        elements.conversationBody.appendChild(row);
+        elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
+
+        // Typing animation variables
+        let i = 0;
+        const speed = 30; // Typing speed in milliseconds
+
+        function typeWriter() {
+          if (i < text.length) {
+            textSpan.innerHTML += text.charAt(i);
+            i++;
+            // Auto-scroll as text appears
+            elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
+            setTimeout(typeWriter, speed);
+          } else {
+            // Typing complete - remove cursor
+            if (cursor && cursor.parentNode) {
+              cursor.remove();
+            }
+            textSpan.classList.remove("typing-active");
+            resolve();
+          }
+        }
+
+        // Start typing after a small delay
+        setTimeout(typeWriter, 100);
+
+      } catch (err) {
+        console.error("Error in typing effect:", err);
+        // Fallback
+        const fallbackRow = createAiBubble(text);
+        elements.conversationBody.appendChild(fallbackRow);
+        resolve();
+      }
+    });
+  }
+
+  // Add this CSS for cursor animation
+  function addTypingCursorStyles() {
+    const style = document.createElement("style");
+    style.textContent = `
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+    
+    .typing-cursor {
+      animation: blink 1s infinite;
+    }
+    
+    .chat-bubble.ai .ai-text {
+      display: inline;
+    }
+  `;
+    document.head.appendChild(style);
+  }
+
+  // Call this in your initializeChat function
+  addTypingCursorStyles();
   window.hideChatboxInline = function () {
     const el = document.querySelector(".chatbox-inline");
     if (el) el.style.display = "none";
@@ -3304,16 +3406,13 @@ form.addEventListener("submit", async function (e) {
     const typingDiv = createElement("div", { className: "typing" });
     typingDiv.innerHTML = "<span></span><span></span><span></span>";
     elements.conversationBody.appendChild(typingDiv);
-    elements.conversationBody.scrollTop =
-      elements.conversationBody.scrollHeight;
+    elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
 
     try {
       let sessionKey = localStorage.getItem("chat_session_key");
 
       if (!sessionKey) {
-        sessionKey =
-          "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
-
+        sessionKey = "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
         localStorage.setItem("chat_session_key", sessionKey);
       }
 
@@ -3323,21 +3422,20 @@ form.addEventListener("submit", async function (e) {
       const response = await fetch(url);
       const data = await response.json();
 
+      // Remove typing indicator
       typingDiv.remove();
 
-      let aiReply =
-        data.response || data.result || data.reply || data.message || data.text;
+      let aiReply = data.response || data.result || data.reply || data.message || data.text;
       if (!aiReply || aiReply.trim().length === 0) {
-        aiReply =
-          "I received your message but couldn't generate a proper response.";
+        aiReply = "I received your message but couldn't generate a proper response.";
       }
 
       const cleanReply = aiReply.trim();
-      const aiBubble = createAiBubble(cleanReply);
-      elements.conversationBody.appendChild(aiBubble);
-      elements.conversationBody.scrollTop =
-        elements.conversationBody.scrollHeight;
 
+      // Create AI bubble with typing effect - AWAIT it properly
+      await createTypingEffect(cleanReply, 5, 0);
+
+      // Save message AFTER typing effect completes
       saveMessage({ sender: "ai", text: cleanReply });
       playNotificationSound();
 
@@ -3352,18 +3450,15 @@ form.addEventListener("submit", async function (e) {
 
       let errorMessage = "Sorry, I'm having trouble responding. ";
       if (err.message.includes("Failed to fetch")) {
-        errorMessage =
-          "Cannot connect to server. Please check if the server is running.";
+        errorMessage = "Cannot connect to server. Please check if the server is running.";
       } else if (err.message.includes("network")) {
         errorMessage = "Network error. Please check your internet connection.";
       } else {
         errorMessage += "Error: " + err.message;
       }
 
-      const aiBubble = createAiBubble(errorMessage);
-      elements.conversationBody.appendChild(aiBubble);
-      elements.conversationBody.scrollTop =
-        elements.conversationBody.scrollHeight;
+      // Show error with typing effect too
+      await createTypingEffect(errorMessage);
       saveMessage({ sender: "ai", text: errorMessage });
       playNotificationSound();
     }
@@ -3612,25 +3707,58 @@ form.addEventListener("submit", async function (e) {
     event.preventDefault();
     const emailInput = document.getElementById("emailInput");
     const email = emailInput?.value.trim();
+
     if (!email) {
       alert("Please enter your email address.");
       return;
     }
 
-    try {
-      const subs = JSON.parse(
-        localStorage.getItem("email_subscriptions") || "[]",
-      );
-      if (!subs.includes(email)) {
-        subs.push(email);
-        localStorage.setItem("email_subscriptions", JSON.stringify(subs));
-      }
-      alert("Thank you! You've been subscribed to our email updates.");
-      window.hideEmailSubscription();
-    } catch (e) {
-      console.error("Failed to save subscription", e);
-      alert("Something went wrong. Please try again.");
+    // Email basic validation
+    if (!email.includes('@') || !email.includes('.')) {
+      alert("Please enter a valid email address.");
+      return;
     }
+
+    console.log("Attempting to send email:", email); // Debug log
+
+    let userextract = email.split("@");
+    let username = userextract[0];
+
+    // Pehle API call, phir localStorage
+    fetch('http://127.0.0.1:8000/api/subscribe', {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      mode: 'cors', // Explicitly set mode
+      body: JSON.stringify({
+        name: username,
+        email: email,
+        plan: "premium"
+      })
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+
+        // Ab localStorage mein save karo
+        const subs = JSON.parse(localStorage.getItem("email_subscriptions") || "[]");
+        if (!subs.includes(email)) {
+          subs.push(email);
+          localStorage.setItem("email_subscriptions", JSON.stringify(subs));
+        }
+
+        alert("Thank you! You've been subscribed to our email updates.");
+      })
+      .catch(error => {
+        console.error("Full error:", error);
+        alert("Could not connect to server. Please check your connection or try again later.");
+      });
   };
 
   // === Feedback Modal Functions ===
