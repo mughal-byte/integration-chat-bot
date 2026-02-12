@@ -27,7 +27,7 @@ document.head.appendChild(gsapScript);
 
 (function () {
   "use strict";
-
+   // === CONFIG ===
   // === CONFIG ===
   const CONFIG = {
     AI_BASE_URL: "https://buildors.com/api/chat-text-bot",
