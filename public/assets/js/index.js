@@ -30,10 +30,10 @@ document.head.appendChild(gsapScript);
 
   // === CONFIG ===
   const CONFIG = {
-    AI_BASE_URL: "https://api.yourdomain.com/ai",
+    AI_BASE_URL: "https://buildors.com/api/chat-text-bot",
     AI_TEXT_MODEL: "2",
     COMP: "15",
-    API_KEY: " your_api_key_here ",
+    API_KEY: "buildor_555210",
 
   };
 
