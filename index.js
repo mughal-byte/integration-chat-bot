@@ -27,14 +27,12 @@ document.head.appendChild(gsapScript);
 
 (function () {
   "use strict";
-
-  // === CONFIG ===
+   // === CONFIG ===
   const CONFIG = {
     AI_BASE_URL: "https://buildors.com/api/chat-text-bot",
     AI_TEXT_MODEL: "2",
     COMP: "15",
     API_KEY: "buildor_555210",
-
   };
 
   console.log(CONFIG.SESSION_KEY);
@@ -1445,8 +1443,8 @@ document.head.appendChild(gsapScript);
     });
 
     const img = createElement("img", {
-      src: "public/images/Vector.png",
-      alt: "Chat Icon",
+      src: "/images/Vector.png",
+      alt: "",
       style: { width: "40px", height: "40px" },
     });
 
@@ -1565,16 +1563,16 @@ document.head.appendChild(gsapScript);
       onmouseout: 'this.style.transform="scale(1)"',
       style: {
         width: "85px",
-        height: "44px",
+        height: "40px",
         background: "#000",
         transition: "transform 0.3s ease",
       },
     });
 
     const iconImg = createElement("img", {
-      src: "public/images/Vector.png",
+      src: "images/Vector.png",
       style: { width: "25px", height: "25px" },
-      alt: "Chat Icon",
+      alt: "",
     });
 
     const onlineDot = createElement("span", {
@@ -1780,7 +1778,7 @@ document.head.appendChild(gsapScript);
           flexDirection: "column",
           alignItems: "center",
           fontSize: "12px",
-          color: "#6b7280",
+          color: "#070707",
           padding: "8px",
           borderRadius: "50%",
           cursor: "pointer",
@@ -1788,14 +1786,14 @@ document.head.appendChild(gsapScript);
         },
       },
       [
-        createElement("img", {
-          src: "public/images/Vector1.png",
-          alt: "Chats",
-          style: { width: "20px", height: "20px", marginBottom: "4px" },
-          onclick: "window.openFullChat()", // Add this line
+        createElement("i", {
+          class: "fa-solid fa-comments",
+          style: { fontSize: "20px", marginBottom: "4px" },
+          onclick: "window.openFullChat()",
         }),
         createElement("span", {}, ["Chats"]),
-      ],
+      ]
+
     );
 
     nav.appendChild(homeNav);
@@ -1835,7 +1833,7 @@ document.head.appendChild(gsapScript);
       [
         createElement("span", {}, ["Powered by "]),
         createElement("img", {
-          src: "public/images/Vector.png",
+          src: "images/Vector.png",
           alt: "ChatBot Logo",
           style: { width: "12px", height: "12px", opacity: "0.7" },
         }),
@@ -1915,10 +1913,10 @@ document.head.appendChild(gsapScript);
     });
     iconContainer.appendChild(
       createElement("img", {
-        src: "public/images/Vector.png",
+        src: "images/Vector.png",
         height: "17",
         style: { marginBottom: "10px" },
-        alt: "Chat Icon",
+        alt: "",
       }),
     );
     iconContainer.appendChild(
@@ -2341,7 +2339,7 @@ document.head.appendChild(gsapScript);
           ["Powered by "],
         ),
         createElement("img", {
-          src: "public/images/Vector.png",
+          src: "images/Vector.png",
           alt: "Logo",
           style: { width: "13px", height: "13px" },
         }),
@@ -2630,7 +2628,7 @@ document.head.appendChild(gsapScript);
       className: "close-modal-icon-wrap",
     });
     iconWrap.appendChild(
-      createElement("i", { className: "fa-solid fa-door-open" }),
+      createElement("i", { className: "fa-solid fa-arrow-right-from-bracket" }),
     );
 
     const title = createElement("h3", {}, [
@@ -3130,7 +3128,7 @@ document.head.appendChild(gsapScript);
       const avatar = createElement("div", { className: "chat-ai-avatar" });
       avatar.appendChild(
         createElement("img", {
-          src: "public/images/Vector.png",
+          src: "images/Vector.png",
           alt: "AI",
         }),
       );
@@ -3247,7 +3245,7 @@ document.head.appendChild(gsapScript);
         const avatar = createElement("div", { className: "chat-ai-avatar" });
         avatar.appendChild(
           createElement("img", {
-            src: "public/images/Vector.png",
+            src: "images/Vector.png",
             alt: "AI",
           })
         );
@@ -3416,10 +3414,6 @@ document.head.appendChild(gsapScript);
         localStorage.setItem("chat_session_key", sessionKey);
       }
 
-
-      // Direct API call to Buildors
-
-      // Direct API call to Buildors
       // Direct API call to Buildors
 
       const url = `${CONFIG.AI_BASE_URL}?ai_text_model=${CONFIG.AI_TEXT_MODEL}&comp=${CONFIG.COMP}&query=${encodeURIComponent(userMessage)}&session_key=${sessionKey}&api_key=${CONFIG.API_KEY}`;
