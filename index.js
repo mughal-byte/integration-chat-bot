@@ -27,7 +27,7 @@ document.head.appendChild(gsapScript);
 
 (function () {
   "use strict";
-   // === CONFIG ===
+  // === CONFIG ===
   const CONFIG = {
     AI_BASE_URL: "https://buildors.com/api/chat-text-bot",
     AI_TEXT_MODEL: "2",
@@ -3284,7 +3284,7 @@ document.head.appendChild(gsapScript);
 
         // Typing animation variables
         let i = 0;
-        const speed = 30; // Typing speed in milliseconds
+        const speed = 5;// Typing speed in milliseconds
 
         function typeWriter() {
           if (i < text.length) {
