@@ -1443,7 +1443,7 @@ document.head.appendChild(gsapScript);
     });
 
     const img = createElement("img", {
-      src: "/images/Vector.png",
+      src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
       alt: "",
       style: { width: "40px", height: "40px" },
     });
@@ -1570,7 +1570,7 @@ document.head.appendChild(gsapScript);
     });
 
     const iconImg = createElement("img", {
-      src: "images/Vector.png",
+      src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
       style: { width: "25px", height: "25px" },
       alt: "",
     });
@@ -1833,7 +1833,7 @@ document.head.appendChild(gsapScript);
       [
         createElement("span", {}, ["Powered by "]),
         createElement("img", {
-          src: "images/Vector.png",
+          src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
           alt: "ChatBot Logo",
           style: { width: "12px", height: "12px", opacity: "0.7" },
         }),
@@ -1913,7 +1913,7 @@ document.head.appendChild(gsapScript);
     });
     iconContainer.appendChild(
       createElement("img", {
-        src: "images/Vector.png",
+        src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
         height: "17",
         style: { marginBottom: "10px" },
         alt: "",
@@ -2339,7 +2339,7 @@ document.head.appendChild(gsapScript);
           ["Powered by "],
         ),
         createElement("img", {
-          src: "images/Vector.png",
+          src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
           alt: "Logo",
           style: { width: "13px", height: "13px" },
         }),
@@ -3128,7 +3128,7 @@ document.head.appendChild(gsapScript);
       const avatar = createElement("div", { className: "chat-ai-avatar" });
       avatar.appendChild(
         createElement("img", {
-          src: "images/Vector.png",
+          src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
           alt: "AI",
         }),
       );
@@ -3245,7 +3245,7 @@ document.head.appendChild(gsapScript);
         const avatar = createElement("div", { className: "chat-ai-avatar" });
         avatar.appendChild(
           createElement("img", {
-            src: "images/Vector.png",
+            src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
             alt: "AI",
           })
         );
