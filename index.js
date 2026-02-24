@@ -22,18 +22,51 @@ gsapScript.integrity =
   "sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==";
 gsapScript.crossOrigin = "anonymous";
 gsapScript.referrerPolicy = "no-referrer";
-
 document.head.appendChild(gsapScript);
 
 (function () {
-  "use strict";
-  // === CONFIG ===
-  const CONFIG = {
-    AI_BASE_URL: "https://buildors.com/api/chat-text-bot",
-    AI_TEXT_MODEL: "2",
-    COMP: "15",
-    API_KEY: "buildor_555210",
-  };
+  // Isko aise fix karo:
+
+  // Sabse upar variables declare karo
+  let getWelcomeMessage = "";
+  let CONFIG = {};  // Empty object pehle
+
+  async function init() {
+    try {
+      const response = await fetch("https://buildors.com/api/bot-config?ai_text_model=2&comp=15");
+      const data = await response.json();
+
+      getWelcomeMessage = data.initial_message_before_chat;
+
+      // ✅ YAHAN PE CONFIG UPDATE KARO
+      CONFIG = {
+        AI_BASE_URL: "https://buildors.com/api/chat-text-bot",
+        AI_TEXT_MODEL: "2",
+        COMP: "15",
+        API_KEY: "buildor_555210",
+        WELCOME_MESSAGE: getWelcomeMessage,  // Ab ye value lega
+      };
+
+      // console.log("Config updated:", CONFIG);
+
+      // Ab start karo chat
+      startChatBot();
+    } catch (error) {
+      console.error("Error in init:", error);
+      // Fallback message
+      getWelcomeMessage = "Welcome! How can I help you?";
+      CONFIG.WELCOME_MESSAGE = getWelcomeMessage;
+    }
+  }
+
+  function startChatBot() {
+    // Yeh function ab kaam karega
+    console.log("Welcome message:", getWelcomeMessage);
+    return getWelcomeMessage;
+  }
+
+  // Init call karo
+  init();
 
   console.log(CONFIG.SESSION_KEY);
   // === DOM Elements Storage ===
@@ -1318,6 +1351,140 @@ document.head.appendChild(gsapScript);
     `;
     document.head.appendChild(style);
   }
+
+  // ✅ YEH POORA FUNCTION COPY KARO (kisi bhi jagah, CONFIG ke neeche)
+  function showSimpleWelcomeMessage() {
+    try {
+      console.log("Trying to show welcome message...");
+
+      // 2 second wait karo sab kuch load hone ke liye
+      setTimeout(() => {
+        // Check if conversation body exists
+        const body = document.getElementById("conversationBody");
+        if (!body) {
+          console.log("Conversation body not found");
+          return;
+        }
+
+        // Check if messages already exist
+        const existingMessages = body.querySelectorAll('.chat-ai-row, .chat-bubble.user');
+        if (existingMessages.length > 0) {
+          console.log("Messages already exist, not showing welcome");
+          return;
+        }
+
+        console.log("Showing welcome message now...");
+
+        // Hide welcome card and pills
+        const intro = document.querySelector(".chatbox-inline");
+        const welcomeInfo = document.querySelector(".welcome-info-box");
+        const welcomePills = document.querySelector(".welcome-pills");
+
+        if (intro) intro.style.display = "none";
+        if (welcomeInfo) welcomeInfo.style.display = "none";
+        if (welcomePills) welcomePills.style.display = "none";
+
+        // Create AI message row
+        const row = document.createElement("div");
+        row.className = "chat-ai-row";
+
+        // Avatar
+        const avatar = document.createElement("div");
+        avatar.className = "chat-ai-avatar";
+        const avatarImg = document.createElement("img");
+        avatarImg.src = "https://i.postimg.cc/ZR9KxqF8/Vector.png";
+        avatarImg.alt = "AI";
+        avatar.appendChild(avatarImg);
+
+        // Bubble
+        const bubble = document.createElement("div");
+        bubble.className = "chat-bubble ai";
+        const innerDiv = document.createElement("div");
+        innerDiv.className = "ai-bubble-inner";
+        const textSpan = document.createElement("span");
+        textSpan.className = "ai-text";
+        textSpan.textContent = CONFIG.WELCOME_MESSAGE;
+
+        innerDiv.appendChild(textSpan);
+        bubble.appendChild(innerDiv);
+        row.appendChild(avatar);
+        row.appendChild(bubble);
+
+        // Add to body
+        body.appendChild(row);
+
+        // Scroll to bottom
+        body.scrollTop = body.scrollHeight;
+
+        // Save to localStorage
+        try {
+          const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+          messages.push({
+            sender: 'ai',
+            text: CONFIG.WELCOME_MESSAGE,
+            timestamp: new Date().toISOString()
+          });
+          localStorage.setItem('chat_messages', JSON.stringify(messages));
+        } catch (e) {
+          console.log("Error saving to localStorage", e);
+        }
+
+        // Set flag that welcome message is shown
+        localStorage.setItem('welcome_message_shown', 'true');
+
+        console.log("Welcome message shown successfully!");
+
+      }, 2000); // 2 second delay
+
+    } catch (error) {
+      console.error("Error in showSimpleWelcomeMessage:", error);
+    }
+  }
+
+  // ✅ YEH POORA FUNCTION ADD KARO - Hardcoded Welcome Message
+  function addWelcomeMessage() {
+    try {
+      if (!elements.conversationBody) {
+        console.log("Conversation body not ready yet");
+        return;
+      }
+
+      console.log("Adding welcome message...");
+
+      // Hide welcome card and pills
+      const intro = document.querySelector(".chatbox-inline");
+      const welcomeInfo = document.querySelector(".welcome-info-box");
+      const welcomePills = document.querySelector(".welcome-pills");
+
+      if (intro) intro.style.display = "none";
+      if (welcomeInfo) welcomeInfo.style.display = "none";
+      if (welcomePills) welcomePills.style.display = "none";
+
+      // Hardcoded welcome message from CONFIG
+      const welcomeText = CONFIG.WELCOME_MESSAGE;
+
+      // Create AI message with typing effect
+      createTypingEffect(welcomeText).then(() => {
+        // Save welcome message to localStorage
+        saveMessage({ sender: "ai", text: welcomeText });
+
+        // Play notification sound if enabled
+        playNotificationSound();
+
+        console.log("Welcome message added successfully");
+      });
+
+    } catch (error) {
+      console.error("Error adding welcome message:", error);
+      // Fallback - direct message without typing effect
+      if (elements.conversationBody) {
+        const row = createAiBubble(CONFIG.WELCOME_MESSAGE);
+        elements.conversationBody.appendChild(row);
+        saveMessage({ sender: "ai", text: CONFIG.WELCOME_MESSAGE });
+      }
+    }
+  }
+
   // === Utility Functions ===
   function createElement(tag, attributes = {}, children = []) {
     const el = document.createElement(tag);
@@ -1759,13 +1926,16 @@ document.head.appendChild(gsapScript);
         },
       },
       [
-        createElement("img", {
-          src: "https://cdn-icons-png.flaticon.com/512/25/25694.png",
-          alt: "Home",
-          style: { width: "20px", height: "20px", marginBottom: "4px" },
+        createElement("i", {
+          className: "fa-solid fa-house-chimney",
+          style: {
+            fontSize: "20px",
+            marginBottom: "4px",
+            color: "#000000",
+          }
         }),
         createElement("span", {}, ["Home"]),
-      ],
+      ]
     );
 
     const chatsNav = createElement(
@@ -2081,7 +2251,6 @@ document.head.appendChild(gsapScript);
       },
       ["💬 Let's Chat"],
     );
-
     chatboxInline.appendChild(avatars);
     chatboxInline.appendChild(welcomeTitle);
     chatboxInline.appendChild(subtitle);
@@ -2089,28 +2258,25 @@ document.head.appendChild(gsapScript);
     chatboxInline.appendChild(freeTrialBtn);
     chatboxInline.appendChild(letsChatBtn);
 
-    const welcomeInfo = createElement(
-      "div",
-      {
-        style: {
-          background:
-            "linear-gradient(180deg, rgba(243, 245, 249, 0.95) 0%, rgba(251, 252, 253, 0) 100%)",
-          padding: "10px",
-          marginLeft: "24px",
-          border: "1px solid #ddd",
-          borderRadius: "10px",
-          fontSize: "13px",
-          width: "250px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          marginBottom: "12px",
-          transition: "all 0.3s ease",
-        },
+    // Welcome message container
+    const welcomeInfo = createElement("div", {
+      style: {
+        background:
+          "linear-gradient(180deg, rgba(243, 245, 249, 0.95) 0%, rgba(251, 252, 253, 0) 100%)",
+        padding: "12px",
+        marginLeft: "24px",
+        border: "1px solid #e0e0e0",
+        borderRadius: "12px",
+        fontSize: "13px",
+        width: "260px",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+        marginBottom: "12px",
       },
-      [
-        "I'm your AI assistant, and I'm ready to help. You can pick an option below or just type your question. The more specific you are, the better I can help!",
-      ],
-    );
+    });
 
+    welcomeInfo.textContent = "Loading...";
+
+    // Pills container
     const welcomePills = createElement("div", {
       className: "welcome-pills",
       style: {
@@ -2122,30 +2288,49 @@ document.head.appendChild(gsapScript);
       },
     });
 
-    [
-      "Discover Chatbot",
-      "Our Other Solutions",
-      "Partner Program",
-      "Contact Us",
-    ].forEach((text) => {
-      welcomePills.appendChild(
-        createElement(
-          "button",
-          {
-            style: {
-              border: "1px solid #ddd",
-              background: "#fff",
-              borderRadius: "20px",
-              padding: "6px 14px",
-              fontSize: "12px",
-              cursor: "pointer",
-              transition: "0.3s ease",
-            },
-          },
-          [text],
-        ),
-      );
-    });
+    // API Call
+    fetch("https://buildors.com/api/bot-config?ai_text_model=2&comp=15")
+      .then((res) => res.json())
+      .then((data) => {
+
+        // ✅ Set first_question
+        welcomeInfo.textContent =
+          data?.first_question || "Welcome! How can I assist you?";
+
+        // ✅ Clear previous pills (safety)
+        welcomePills.innerHTML = "";
+
+        // ✅ Generate buttons from first_options
+        if (data?.first_options && Array.isArray(data.first_options)) {
+          data.first_options.forEach((text) => {
+            const btn = createElement(
+              "button",
+              {
+                style: {
+                  border: "1px solid #ddd",
+                  background: "#fff",
+                  borderRadius: "20px",
+                  padding: "6px 14px",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                  transition: "0.3s ease",
+                },
+                onclick: () => {
+                  console.log("User selected:", text);
+                  // yahan tum apna message send logic laga sakte ho
+                },
+              },
+              [text]
+            );
+
+            welcomePills.appendChild(btn);
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching bot config:", error);
+        welcomeInfo.textContent = "Unable to load message.";
+      });
 
     body.appendChild(chatboxInline);
     body.appendChild(welcomeInfo);
@@ -3053,8 +3238,11 @@ document.head.appendChild(gsapScript);
 
   // === Main Functions ===
 
+  // === Main Functions ===
   function initializeChat() {
     try {
+      console.log("Initializing chat widget...");
+
       // Create and append all elements to body
       addChatWidgetStyles();
 
@@ -3078,11 +3266,31 @@ document.head.appendChild(gsapScript);
         elements.soundToggle.addEventListener("change", handleSoundToggle);
       }
 
+      // ✅ CHECK IF USER HAS VISITED BEFORE
+      const hasVisited = localStorage.getItem("chat_has_visited");
+      const messages = JSON.parse(localStorage.getItem(CHAT_MESSAGES_KEY) || "[]");
+
+      console.log("Has visited before:", hasVisited);
+      console.log("Existing messages count:", messages.length);
+
+      // Agar pehli baar visit kiya hai aur koi message nahi hai to welcome message dikhao
+      if (!hasVisited && messages.length === 0) {
+        console.log("First time user - showing welcome message");
+
+        // Thoda delay do taaki sab load ho jaye
+        setTimeout(() => {
+          addWelcomeMessage();
+          localStorage.setItem("chat_has_visited", "true");
+        }, 1500); // 1.5 second delay
+      } else {
+        console.log("Returning user - loading existing messages");
+        // Load existing messages
+        loadMessages();
+      }
+
       checkMessageCountAndToggleAssistantInfo();
       initWelcomePills();
 
-      // Load existing messages
-      loadMessages();
     } catch (error) {
       console.error("Error in initializeChat:", error);
       // Fallback - create a simple chat button
@@ -3097,7 +3305,6 @@ document.head.appendChild(gsapScript);
       document.body.appendChild(fallbackButton);
     }
   }
-
   function loadMessages() {
     try {
       const raw = localStorage.getItem(CHAT_MESSAGES_KEY) || "[]";
@@ -3208,6 +3415,22 @@ document.head.appendChild(gsapScript);
       }, 10);
     }
 
+    // ✅ CHECK KARO AGAR KOI MESSAGE NAHI HAI TO WELCOME MESSAGE DIKHAO
+    const messages = JSON.parse(localStorage.getItem(CHAT_MESSAGES_KEY) || "[]");
+    const hasVisited = localStorage.getItem("chat_has_visited");
+
+    // Agar pehli baar hai aur koi message nahi hai to welcome message dikhao
+    if (!hasVisited && messages.length === 0 && elements.conversationBody) {
+      // Check if welcome message already exists
+      const existingMessages = elements.conversationBody.querySelectorAll('.chat-ai-row, .chat-bubble.user');
+      if (existingMessages.length === 0) {
+        setTimeout(() => {
+          addWelcomeMessage();
+          localStorage.setItem("chat_has_visited", "true");
+        }, 500);
+      }
+    }
+
     // Show welcome content when opening full chat
     const intro = document.querySelector(".chatbox-inline");
     const welcomeInfo = document.querySelector(".welcome-info-box");
@@ -3235,6 +3458,7 @@ document.head.appendChild(gsapScript);
       }, 300);
     }
   };
+  // ✅ YEH FUNCTION PEHLE SE HONA CHAHIYE - Agar nahi hai to add karo
   async function createTypingEffect(text) {
     return new Promise((resolve) => {
       try {
@@ -3284,7 +3508,7 @@ document.head.appendChild(gsapScript);
 
         // Typing animation variables
         let i = 0;
-        const speed = 5;// Typing speed in milliseconds
+        const speed = 5; // Typing speed in milliseconds
 
         function typeWriter() {
           if (i < text.length) {
@@ -3314,6 +3538,26 @@ document.head.appendChild(gsapScript);
         resolve();
       }
     });
+  }
+
+  // ✅ CSS for cursor animation (agar nahi hai to add karo)
+  function addTypingCursorStyles() {
+    const style = document.createElement("style");
+    style.textContent = `
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+    
+    .typing-cursor {
+      animation: blink 1s infinite;
+    }
+    
+    .chat-bubble.ai .ai-text {
+      display: inline;
+    }
+  `;
+    document.head.appendChild(style);
   }
 
   // Add this CSS for cursor animation
@@ -3463,16 +3707,30 @@ document.head.appendChild(gsapScript);
     }
   }
 
+  // ✅ Helper function for fallback
   function createAiBubble(text) {
-    const aiBubble = createElement("div", { className: "chat-bubble ai" });
+    const row = createElement("div", { className: "chat-ai-row" });
+
+    const avatar = createElement("div", { className: "chat-ai-avatar" });
+    avatar.appendChild(
+      createElement("img", {
+        src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
+        alt: "AI",
+      })
+    );
+
+    const bubble = createElement("div", { className: "chat-bubble ai" });
     const innerDiv = createElement("div", { className: "ai-bubble-inner" });
     const textSpan = createElement("span", { className: "ai-text" });
     textSpan.textContent = text;
-    innerDiv.appendChild(textSpan);
-    aiBubble.appendChild(innerDiv);
-    return aiBubble;
-  }
 
+    innerDiv.appendChild(textSpan);
+    bubble.appendChild(innerDiv);
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+
+    return row;
+  }
   function setupChatInputEvents() {
     if (!elements.chatInput) return;
 
@@ -4100,21 +4358,41 @@ document.head.appendChild(gsapScript);
     });
   }
 
-  // === Initialize on DOM Load ===
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initializeApp);
-  } else {
-    setTimeout(initializeApp, 100);
-  }
+  // === Initialize on DOM Load ===
   function initializeApp() {
     try {
+      console.log("Initializing app...");
       initializeChat();
+
+      // ✅ YEH LINE ADD KARO - Welcome message check karo
+      setTimeout(() => {
+        const welcomeShown = localStorage.getItem('welcome_message_shown');
+        const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+
+        console.log("Welcome shown:", welcomeShown);
+        console.log("Messages count:", messages.length);
+
+        // Agar welcome message nahi dikhaya aur koi message nahi hai to dikhao
+        if (!welcomeShown && messages.length === 0) {
+          console.log("Conditions met, showing welcome message");
+          showSimpleWelcomeMessage();
+        } else {
+          console.log("Welcome message already shown or messages exist");
+        }
+      }, 3000); // 3 second delay after initialization
+
     } catch (error) {
       console.error("❌ Failed to initialize chat widget:", error);
     }
   }
 
+  // Ye line already hogi, change karne ki zaroorat nahi
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeApp);
+  } else {
+    setTimeout(initializeApp, 100);
+  }
   // Close more menu when clicking outside
   // Page load par chalao
   document.addEventListener("DOMContentLoaded", function () {
@@ -4143,4 +4421,21 @@ document.head.appendChild(gsapScript);
     hideFeedbackModal,
     handleFeedbackSubmit,
   };
+
+  // ✅ YEH EVENT LISTENER ADD KARO (file ke end mein)
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("DOM fully loaded");
+
+    // Extra check for welcome message
+    setTimeout(() => {
+      const welcomeShown = localStorage.getItem('welcome_message_shown');
+      const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+
+      if (!welcomeShown && messages.length === 0) {
+        console.log("DOMContentLoaded: Showing welcome message");
+        showSimpleWelcomeMessage();
+      }
+    }, 4000); // 4 second delay
+  });
+
 })();
