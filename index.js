@@ -1,74 +1,33 @@
-// script.js - Complete Chat Widget with DOM Creation
+// script.js - Complete Chat Widget with DOM Creation (FIXED VERSION)
+
 // Load GSAP dynamically
 // Bootstrap
 const bootstrap = document.createElement("link");
 bootstrap.rel = "stylesheet";
-bootstrap.href =
-  "https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css";
+bootstrap.href = "https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css";
 document.head.appendChild(bootstrap);
 
 // Font Awesome
 const fa = document.createElement("link");
 fa.rel = "stylesheet";
-fa.href =
-  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css";
+fa.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css";
 document.head.appendChild(fa);
 
 // GSAP
 const gsapScript = document.createElement("script");
-gsapScript.src =
-  "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js";
-gsapScript.integrity =
-  "sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==";
+gsapScript.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js";
+gsapScript.integrity = "sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==";
 gsapScript.crossOrigin = "anonymous";
 gsapScript.referrerPolicy = "no-referrer";
 document.head.appendChild(gsapScript);
 
 (function () {
-  // Isko aise fix karo:
-
-  // Sabse upar variables declare karo
+  // Variables declaration
   let getWelcomeMessage = "";
-  let CONFIG = {};  // Empty object pehle
+  let CONFIG = {};
+  let chatMode = "chatbot"; // Default mode
+  let socket = null; // For live chat
 
-  async function init() {
-    try {
-      const response = await fetch("https://buildors.com/api/bot-config?ai_text_model=2&comp=15");
-      const data = await response.json();
-
-      getWelcomeMessage = data.initial_message_before_chat;
-
-      // ✅ YAHAN PE CONFIG UPDATE KARO
-      CONFIG = {
-        AI_BASE_URL: "https://buildors.com/api/chat-text-bot",
-        AI_TEXT_MODEL: "2",
-        COMP: "15",
-        API_KEY: "buildor_555210",
-        WELCOME_MESSAGE: getWelcomeMessage,  // Ab ye value lega
-      };
-
-      // console.log("Config updated:", CONFIG);
-
-      // Ab start karo chat
-      startChatBot();
-    } catch (error) {
-      console.error("Error in init:", error);
-      // Fallback message
-      getWelcomeMessage = "Welcome! How can I help you?";
-      CONFIG.WELCOME_MESSAGE = getWelcomeMessage;
-    }
-  }
-
-  function startChatBot() {
-    // Yeh function ab kaam karega
-    console.log("Welcome message:", getWelcomeMessage);
-    return getWelcomeMessage;
-  }
-
-  // Init call karo
-  init();
-
-  console.log(CONFIG.SESSION_KEY);
   // === DOM Elements Storage ===
   const elements = {};
 
@@ -82,6 +41,37 @@ document.head.appendChild(gsapScript);
   let moreMenuTimeoutId = null;
   let isAssistantInfoShown = false;
   let sessionUserMessages = 0;
+
+  async function init() {
+    try {
+      const response = await fetch("https://buildors.com/api/bot-config?ai_text_model=2&comp=15");
+      const data = await response.json();
+
+      getWelcomeMessage = data.initial_message_before_chat || "Welcome! How can I help you?";
+
+      CONFIG = {
+        AI_BASE_URL: "https://buildors.com/api/chat-text-bot",
+        AI_TEXT_MODEL: "2",
+        COMP: "15",
+        API_KEY: "buildor_555210",
+        WELCOME_MESSAGE: getWelcomeMessage,
+        SESSION_KEY: "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
+      };
+
+      startChatBot();
+    } catch (error) {
+      console.error("Error in init:", error);
+      getWelcomeMessage = "Welcome! How can I help you?";
+      CONFIG.WELCOME_MESSAGE = getWelcomeMessage;
+    }
+  }
+
+  function startChatBot() {
+    return getWelcomeMessage;
+  }
+
+  // Call init
+  init();
 
   // === CSS Styles ===
   function addChatWidgetStyles() {
@@ -1249,7 +1239,7 @@ document.head.appendChild(gsapScript);
             background-color: white !important;
         }
         
-        .rounded-\[20px\] {
+        .rounded-\\[20px\\] {
             border-radius: 20px !important;
         }
         
@@ -1348,34 +1338,32 @@ document.head.appendChild(gsapScript);
             border: 1px solid rgba(0,0,0,.125);
             border-radius: 0.25rem;
         }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .typing-cursor {
+            animation: blink 1s infinite;
+        }
+        
+        .chat-bubble.ai .ai-text {
+            display: inline;
+        }
     `;
     document.head.appendChild(style);
   }
 
-  // ✅ YEH POORA FUNCTION COPY KARO (kisi bhi jagah, CONFIG ke neeche)
   function showSimpleWelcomeMessage() {
     try {
-      console.log("Trying to show welcome message...");
-
-      // 2 second wait karo sab kuch load hone ke liye
       setTimeout(() => {
-        // Check if conversation body exists
         const body = document.getElementById("conversationBody");
-        if (!body) {
-          console.log("Conversation body not found");
-          return;
-        }
+        if (!body) return;
 
-        // Check if messages already exist
         const existingMessages = body.querySelectorAll('.chat-ai-row, .chat-bubble.user');
-        if (existingMessages.length > 0) {
-          console.log("Messages already exist, not showing welcome");
-          return;
-        }
+        if (existingMessages.length > 0) return;
 
-        console.log("Showing welcome message now...");
-
-        // Hide welcome card and pills
         const intro = document.querySelector(".chatbox-inline");
         const welcomeInfo = document.querySelector(".welcome-info-box");
         const welcomePills = document.querySelector(".welcome-pills");
@@ -1384,11 +1372,9 @@ document.head.appendChild(gsapScript);
         if (welcomeInfo) welcomeInfo.style.display = "none";
         if (welcomePills) welcomePills.style.display = "none";
 
-        // Create AI message row
         const row = document.createElement("div");
         row.className = "chat-ai-row";
 
-        // Avatar
         const avatar = document.createElement("div");
         avatar.className = "chat-ai-avatar";
         const avatarImg = document.createElement("img");
@@ -1396,7 +1382,6 @@ document.head.appendChild(gsapScript);
         avatarImg.alt = "AI";
         avatar.appendChild(avatarImg);
 
-        // Bubble
         const bubble = document.createElement("div");
         bubble.className = "chat-bubble ai";
         const innerDiv = document.createElement("div");
@@ -1410,48 +1395,30 @@ document.head.appendChild(gsapScript);
         row.appendChild(avatar);
         row.appendChild(bubble);
 
-        // Add to body
         body.appendChild(row);
-
-        // Scroll to bottom
         body.scrollTop = body.scrollHeight;
 
-        // Save to localStorage
         try {
-          const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+          const messages = JSON.parse(localStorage.getItem(CHAT_MESSAGES_KEY) || '[]');
           messages.push({
             sender: 'ai',
             text: CONFIG.WELCOME_MESSAGE,
             timestamp: new Date().toISOString()
           });
-          localStorage.setItem('chat_messages', JSON.stringify(messages));
-        } catch (e) {
-          console.log("Error saving to localStorage", e);
-        }
+          localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify(messages));
+        } catch (e) {}
 
-        // Set flag that welcome message is shown
         localStorage.setItem('welcome_message_shown', 'true');
-
-        console.log("Welcome message shown successfully!");
-
-      }, 2000); // 2 second delay
-
+      }, 2000);
     } catch (error) {
       console.error("Error in showSimpleWelcomeMessage:", error);
     }
   }
 
-  // ✅ YEH POORA FUNCTION ADD KARO - Hardcoded Welcome Message
   function addWelcomeMessage() {
     try {
-      if (!elements.conversationBody) {
-        console.log("Conversation body not ready yet");
-        return;
-      }
+      if (!elements.conversationBody) return;
 
-      console.log("Adding welcome message...");
-
-      // Hide welcome card and pills
       const intro = document.querySelector(".chatbox-inline");
       const welcomeInfo = document.querySelector(".welcome-info-box");
       const welcomePills = document.querySelector(".welcome-pills");
@@ -1460,23 +1427,14 @@ document.head.appendChild(gsapScript);
       if (welcomeInfo) welcomeInfo.style.display = "none";
       if (welcomePills) welcomePills.style.display = "none";
 
-      // Hardcoded welcome message from CONFIG
       const welcomeText = CONFIG.WELCOME_MESSAGE;
 
-      // Create AI message with typing effect
       createTypingEffect(welcomeText).then(() => {
-        // Save welcome message to localStorage
         saveMessage({ sender: "ai", text: welcomeText });
-
-        // Play notification sound if enabled
         playNotificationSound();
-
-        console.log("Welcome message added successfully");
       });
-
     } catch (error) {
       console.error("Error adding welcome message:", error);
-      // Fallback - direct message without typing effect
       if (elements.conversationBody) {
         const row = createAiBubble(CONFIG.WELCOME_MESSAGE);
         elements.conversationBody.appendChild(row);
@@ -1494,14 +1452,13 @@ document.head.appendChild(gsapScript);
         Object.assign(el.style, attributes[key]);
       } else if (key === "className") {
         el.className = attributes[key];
-      } else if (key.startsWith("on")) {
-        el[key] = attributes[key];
+      } else if (key.startsWith("on") && typeof attributes[key] === "function") {
+        el.addEventListener(key.substring(2).toLowerCase(), attributes[key]);
       } else if (key !== "children") {
         el.setAttribute(key, attributes[key]);
       }
     });
 
-    // Handle children - FIX THIS
     if (children) {
       if (Array.isArray(children)) {
         children.forEach((child) => {
@@ -1562,18 +1519,13 @@ document.head.appendChild(gsapScript);
       osc2.type = "triangle";
       osc2.frequency.value = 1400;
       gain2.gain.setValueAtTime(0.15, audioCtx.currentTime + 0.15);
-      gain2.gain.exponentialRampToValueAtTime(
-        0.01,
-        audioCtx.currentTime + 0.35,
-      );
+      gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
 
       osc1.start(audioCtx.currentTime);
       osc1.stop(audioCtx.currentTime + 0.2);
       osc2.start(audioCtx.currentTime + 0.15);
       osc2.stop(audioCtx.currentTime + 0.35);
-    } catch (e) {
-      console.log("Could not play sound:", e);
-    }
+    } catch (e) {}
   }
 
   function isSoundEnabled() {
@@ -1587,7 +1539,6 @@ document.head.appendChild(gsapScript);
   }
 
   // === UI Creation Functions ===
-
   function createFloatingButton() {
     const button = createElement("div", {
       id: "chatButton",
@@ -1606,7 +1557,7 @@ document.head.appendChild(gsapScript);
         cursor: "pointer",
         zIndex: "1000",
         transition: "all 0.3s ease",
-      },
+      }
     });
 
     const img = createElement("img", {
@@ -1615,30 +1566,31 @@ document.head.appendChild(gsapScript);
       style: { width: "40px", height: "40px" },
     });
 
-    // Add event listeners directly
-    button.addEventListener("click", function () {
+    button.appendChild(img);
+    
+    // Add event listeners
+    button.addEventListener("click", function() {
       window.openProductExpert();
     });
 
-    button.addEventListener("mouseover", function () {
+    button.addEventListener("mouseover", function() {
       this.style.transform = "scale(1.1)";
       this.style.boxShadow = "0 6px 16px rgba(0,0,0,0.25)";
     });
 
-    button.addEventListener("mouseout", function () {
+    button.addEventListener("mouseout", function() {
       this.style.transform = "scale(1)";
       this.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)";
     });
 
-    button.addEventListener("mousedown", function () {
+    button.addEventListener("mousedown", function() {
       this.style.transform = "scale(0.95)";
     });
 
-    button.addEventListener("mouseup", function () {
+    button.addEventListener("mouseup", function() {
       this.style.transform = "scale(1.1)";
     });
 
-    button.appendChild(img);
     return button;
   }
 
@@ -1651,45 +1603,37 @@ document.head.appendChild(gsapScript);
 
     // Header
     const header = createElement("div", {
-      className:
-        "chat-header position-relative d-flex justify-content-between align-items-center fw-bold text-dark",
+      className: "chat-header position-relative d-flex justify-content-between align-items-center fw-bold text-dark",
       style: { padding: "34px 20px 18px" },
     });
 
-    const minimizeBtn = createElement(
-      "span",
-      {
-        style: {
-          position: "absolute",
-          top: "0",
-          right: "0",
-          fontSize: "20px",
-          cursor: "pointer",
-          padding: "20px",
-          opacity: "0.75",
-          transition: "all 0.3s ease",
-        },
-      },
-      [createElement("i", { className: "fa-solid fa-minus" })],
-    );
+    const minimizeBtn = createElement("span", {
+      style: {
+        position: "absolute",
+        top: "0",
+        right: "0",
+        fontSize: "20px",
+        cursor: "pointer",
+        padding: "20px",
+        opacity: "0.75",
+        transition: "all 0.3s ease",
+      }
+    }, [
+      createElement("i", { className: "fa-solid fa-minus" })
+    ]);
 
-    // Events attach karo
-    minimizeBtn.onclick = minimizeChat;
-    minimizeBtn.onmouseover = () => (minimizeBtn.style.opacity = "1");
-    minimizeBtn.onmouseout = () => (minimizeBtn.style.opacity = "0.75");
+    minimizeBtn.addEventListener("click", window.minimizeChat);
+    minimizeBtn.addEventListener("mouseover", () => minimizeBtn.style.opacity = "1");
+    minimizeBtn.addEventListener("mouseout", () => minimizeBtn.style.opacity = "0.75");
 
-    const title = createElement(
-      "h2",
-      {
-        style: {
-          marginTop: "16px",
-          marginLeft: "4px",
-          fontSize: "45px",
-          fontWeight: "bold",
-        },
-      },
-      ["Chat with us!"],
-    );
+    const title = createElement("h2", {
+      style: {
+        marginTop: "16px",
+        marginLeft: "4px",
+        fontSize: "45px",
+        fontWeight: "bold",
+      }
+    }, ["Chat with us!"]);
 
     header.appendChild(minimizeBtn);
     header.appendChild(title);
@@ -1703,10 +1647,6 @@ document.head.appendChild(gsapScript);
     // Text Support Card
     const textSupportCard = createElement("div", {
       className: "chat-card modern bg-white rounded-[20px] shadow",
-      onmouseover:
-        'this.style.transform="translateY(-3px)"; this.style.boxShadow="0 8px 20px rgba(0,0,0,0.1)"',
-      onmouseout:
-        'this.style.transform="translateY(0)"; this.style.boxShadow="0 10px 30px rgba(0,0,0,0.08)"',
       style: {
         padding: "18px",
         display: "flex",
@@ -1715,7 +1655,17 @@ document.head.appendChild(gsapScript);
         gap: "18px",
         transition: "all 0.3s ease",
         cursor: "pointer",
-      },
+      }
+    });
+
+    textSupportCard.addEventListener("mouseover", function() {
+      this.style.transform = "translateY(-3px)";
+      this.style.boxShadow = "0 8px 20px rgba(0,0,0,0.1)";
+    });
+
+    textSupportCard.addEventListener("mouseout", function() {
+      this.style.transform = "translateY(0)";
+      this.style.boxShadow = "0 10px 30px rgba(0,0,0,0.08)";
     });
 
     const cardTop = createElement("div", {
@@ -1724,16 +1674,21 @@ document.head.appendChild(gsapScript);
     });
 
     const iconWrap = createElement("div", {
-      className:
-        "icon-wrap position-relative d-flex align-items-center justify-content-center rounded-pill",
-      onmouseover: 'this.style.transform="scale(1.05)"',
-      onmouseout: 'this.style.transform="scale(1)"',
+      className: "icon-wrap position-relative d-flex align-items-center justify-content-center rounded-pill",
       style: {
         width: "85px",
         height: "40px",
         background: "#000",
         transition: "transform 0.3s ease",
-      },
+      }
+    });
+
+    iconWrap.addEventListener("mouseover", function() {
+      this.style.transform = "scale(1.05)";
+    });
+
+    iconWrap.addEventListener("mouseout", function() {
+      this.style.transform = "scale(1)";
     });
 
     const iconImg = createElement("img", {
@@ -1743,8 +1698,7 @@ document.head.appendChild(gsapScript);
     });
 
     const onlineDot = createElement("span", {
-      className:
-        "online-dot position-absolute rounded-circle border border-white",
+      className: "online-dot position-absolute rounded-circle border border-white",
       style: {
         top: "3px",
         left: "3px",
@@ -1759,36 +1713,28 @@ document.head.appendChild(gsapScript);
     iconWrap.appendChild(onlineDot);
 
     const textWrap = createElement("div", { className: "text-wrap" });
-    const titleDiv = createElement(
-      "div",
-      {
-        className: "title",
-        style: {
-          fontWeight: "600",
-          fontSize: "14px",
-          marginBottom: "4px",
-          WebkitFontSmoothing: "antialiased",
-          MozOsxFontSmoothing: "grayscale",
-        },
-      },
-      ["Customer support"],
-    );
+    const titleDiv = createElement("div", {
+      className: "title",
+      style: {
+        fontWeight: "600",
+        fontSize: "14px",
+        marginBottom: "4px",
+        WebkitFontSmoothing: "antialiased",
+        MozOsxFontSmoothing: "grayscale",
+      }
+    }, ["Customer support"]);
 
-    const descDiv = createElement(
-      "div",
-      {
-        style: {
-          color: "#6b7280",
-          fontSize: "13px",
-          lineHeight: "1.5",
-          WebkitFontSmoothing: "antialiased",
-          MozOsxFontSmoothing: "grayscale",
-        },
-      },
-      [
-        "Let's chat with our Customer Support AI! It’s here to help you instantly with any questions or issues.",
-      ],
-    );
+    const descDiv = createElement("div", {
+      style: {
+        color: "#6b7280",
+        fontSize: "13px",
+        lineHeight: "1.5",
+        WebkitFontSmoothing: "antialiased",
+        MozOsxFontSmoothing: "grayscale",
+      }
+    }, [
+      "Let's chat with our Customer Support AI! It's here to help you instantly with any questions or issues.",
+    ]);
 
     textWrap.appendChild(titleDiv);
     textWrap.appendChild(descDiv);
@@ -1796,61 +1742,48 @@ document.head.appendChild(gsapScript);
     cardTop.appendChild(iconWrap);
     cardTop.appendChild(textWrap);
 
-    // In createChatPage() function, update the chatButton section:
-    const chatButton = createElement(
-      "button",
-      {
-        style: {
-          width: "100%",
-          padding: "12px",
-          borderRadius: "10px",
-          border: "none",
-          cursor: "pointer",
-          fontSize: "15px",
-          fontWeight: "600",
-          marginBottom: "10px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-          background: "#111827",
-          color: "#ffffff",
-          transition: "transform 0.3s ease",
-        },
-      },
-      [
-        "Let's Chat ",
-        createElement("i", { className: "fa-solid fa-arrow-right" }),
-      ],
-    );
+    const chatButton = createElement("button", {
+      style: {
+        width: "100%",
+        padding: "12px",
+        borderRadius: "10px",
+        border: "none",
+        cursor: "pointer",
+        fontSize: "15px",
+        fontWeight: "600",
+        marginBottom: "10px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "8px",
+        background: "#111827",
+        color: "#ffffff",
+        transition: "transform 0.3s ease",
+      }
+    }, [
+      "Let's Chat ",
+      createElement("i", { className: "fa-solid fa-arrow-right" }),
+    ]);
 
-    // Then add event listeners AFTER
-    setTimeout(() => {
-      chatButton.addEventListener("click", function () {
-        window.openFullChat();
-      });
+    chatButton.addEventListener("click", function() {
+      window.openFullChat();
+    });
 
-      chatButton.addEventListener("mouseover", function () {
-        this.style.background = "#1f2937";
-        this.style.transform = "translateY(-2px)";
-      });
+    chatButton.addEventListener("mouseover", function() {
+      this.style.background = "#1f2937";
+      this.style.transform = "translateY(-2px)";
+    });
 
-      chatButton.addEventListener("mouseout", function () {
-        this.style.background = "#111827";
-        this.style.transform = "translateY(0)";
-      });
-    }, 100);
+    chatButton.addEventListener("mouseout", function() {
+      this.style.background = "#111827";
+      this.style.transform = "translateY(0)";
+    });
 
     textSupportCard.appendChild(cardTop);
     textSupportCard.appendChild(chatButton);
 
     // System Status Card
     const systemCard = createElement("div", {
-      onclick: "openFullChat()",
-      onmouseover:
-        'this.style.transform="translateY(-3px)"; this.style.boxShadow="0 12px 30px rgba(0,0,0,0.12)"',
-      onmouseout:
-        'this.style.transform="translateY(0)"; this.style.boxShadow="0 2px 6px rgba(0,0,0,0.08)"',
       style: {
         background: "white",
         borderRadius: "18px",
@@ -1863,30 +1796,38 @@ document.head.appendChild(gsapScript);
         transition: "all 0.3s ease",
         WebkitFontSmoothing: "antialiased",
         MozOsxFontSmoothing: "grayscale",
-      },
+      }
     });
 
-    const systemLeft = createElement(
-      "div",
-      {
-        style: {
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          fontWeight: "500",
-          fontSize: "14px",
-        },
-      },
-      [
-        createElement("i", { className: "fa-solid fa-gear" }),
-        createElement("span", {}, ["System Status"]),
-      ],
-    );
+    systemCard.addEventListener("mouseover", function() {
+      this.style.transform = "translateY(-3px)";
+      this.style.boxShadow = "0 12px 30px rgba(0,0,0,0.12)";
+    });
+
+    systemCard.addEventListener("mouseout", function() {
+      this.style.transform = "translateY(0)";
+      this.style.boxShadow = "0 2px 6px rgba(0,0,0,0.08)";
+    });
+
+    systemCard.addEventListener("click", function() {
+      window.openFullChat();
+    });
+
+    const systemLeft = createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        fontWeight: "500",
+        fontSize: "14px",
+      }
+    }, [
+      createElement("i", { className: "fa-solid fa-gear" }),
+      createElement("span", {}, ["System Status"]),
+    ]);
 
     systemCard.appendChild(systemLeft);
-    systemCard.appendChild(
-      createElement("i", { className: "fa-solid fa-arrow-right" }),
-    );
+    systemCard.appendChild(createElement("i", { className: "fa-solid fa-arrow-right" }));
 
     body.appendChild(textSupportCard);
     body.appendChild(systemCard);
@@ -1909,113 +1850,88 @@ document.head.appendChild(gsapScript);
       },
     });
 
-    const homeNav = createElement(
-      "div",
-      {
-        onmouseout: 'this.style.background="transparent"',
+    const homeNav = createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        fontSize: "12px",
+        color: "#6b7280",
+        padding: "8px",
+        borderRadius: "50%",
+        cursor: "pointer",
+        transition: "all 0.3s ease",
+      }
+    }, [
+      createElement("i", {
+        className: "fa-solid fa-house-chimney",
         style: {
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          fontSize: "12px",
-          color: "#6b7280",
-          padding: "8px",
-          borderRadius: "50%",
-          cursor: "pointer",
-          transition: "all 0.3s ease",
-        },
-      },
-      [
-        createElement("i", {
-          className: "fa-solid fa-house-chimney",
-          style: {
-            fontSize: "20px",
-            marginBottom: "4px",
-            color: "#000000",
-          }
-        }),
-        createElement("span", {}, ["Home"]),
-      ]
-    );
+          fontSize: "20px",
+          marginBottom: "4px",
+          color: "#000000",
+        }
+      }),
+      createElement("span", {}, ["Home"]),
+    ]);
 
-    const chatsNav = createElement(
-      "div",
-      {
-        onclick: "openFullChat()", // This is already there
-        onmouseout: 'this.style.background="transparent"',
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          fontSize: "12px",
-          color: "#070707",
-          padding: "8px",
-          borderRadius: "50%",
-          cursor: "pointer",
-          transition: "all 0.3s ease",
-        },
-      },
-      [
-        createElement("i", {
-          class: "fa-solid fa-comments",
-          style: { fontSize: "20px", marginBottom: "4px" },
-          onclick: "window.openFullChat()",
-        }),
-        createElement("span", {}, ["Chats"]),
-      ]
+    homeNav.addEventListener("mouseout", function() {
+      this.style.background = "transparent";
+    });
 
-    );
+    const chatsNav = createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        fontSize: "12px",
+        color: "#070707",
+        padding: "8px",
+        borderRadius: "50%",
+        cursor: "pointer",
+        transition: "all 0.3s ease",
+      }
+    }, [
+      createElement("i", {
+        className: "fa-solid fa-comments",
+        style: { fontSize: "20px", marginBottom: "4px" },
+      }),
+      createElement("span", {}, ["Chats"]),
+    ]);
+
+    chatsNav.addEventListener("mouseout", function() {
+      this.style.background = "transparent";
+    });
+
+    chatsNav.addEventListener("click", function(e) {
+      e.stopPropagation();
+      window.openFullChat();
+    });
 
     nav.appendChild(homeNav);
     nav.appendChild(chatsNav);
 
     // Footer
-    // Add this after creating chatsNav, before appending it to nav
-    chatsNav.addEventListener("click", function (e) {
-      // Prevent event bubbling if needed
-      e.stopPropagation();
-      window.openFullChat();
-    });
-
-    // Also add specific click handler for the image
-    setTimeout(() => {
-      const chatImg = chatsNav.querySelector("img");
-      if (chatImg) {
-        chatImg.addEventListener("click", function (e) {
-          e.stopPropagation();
-          window.openFullChat();
-        });
+    const footer = createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#6b7280",
+        fontSize: "12px",
+        gap: "6px",
+        marginBottom: "8px",
       }
-    }, 100);
-    const footer = createElement(
-      "div",
-      {
-        style: {
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#6b7280",
-          fontSize: "12px",
-          gap: "6px",
-          marginBottom: "8px",
-        },
-      },
-      [
-        createElement("span", {}, ["Powered by "]),
-        createElement("img", {
-          src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
-          alt: "ChatBot Logo",
-          style: { width: "12px", height: "12px", opacity: "0.7" },
-        }),
-        createElement(
-          "span",
-          {
-            style: { fontSize: "12px", color: "#555" },
-          },
-          ["Buildors.com"],
-        ),
-      ],
-    );
+    }, [
+      createElement("span", {}, ["Powered by "]),
+      createElement("img", {
+        src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
+        alt: "ChatBot Logo",
+        style: { width: "12px", height: "12px", opacity: "0.7" },
+      }),
+      createElement("span", {
+        style: { fontSize: "12px", color: "#555" },
+      }, ["Buildors.com"]),
+    ]);
 
     container.appendChild(header);
     container.appendChild(body);
@@ -2045,13 +1961,11 @@ document.head.appendChild(gsapScript);
     leftIcons.appendChild(backArrow);
 
     // More icon
-    const moreIcon = createElement(
-      "span",
-      {
-        className: "more-icon",
-      },
-      [createElement("i", { className: "fa-solid fa-ellipsis" })],
-    );
+    const moreIcon = createElement("span", {
+      className: "more-icon",
+    }, [
+      createElement("i", { className: "fa-solid fa-ellipsis" }),
+    ]);
 
     const moreMenu = createMoreMenu();
     moreIcon.appendChild(moreMenu);
@@ -2078,39 +1992,39 @@ document.head.appendChild(gsapScript);
     const cardContent = createElement("div", {
       className: "d-flex align-items-center justify-content-between",
     });
+    
     const iconContainer = createElement("div", {
       className: "bg-dark border position-relative rounded-circle p-1",
     });
+    
     iconContainer.appendChild(
       createElement("img", {
         src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
         height: "17",
         style: { marginBottom: "10px" },
         alt: "",
-      }),
+      })
     );
+    
     iconContainer.appendChild(
-      createElement("span", { className: "support-pill-dot" }),
+      createElement("span", { className: "support-pill-dot" })
     );
 
     cardContent.appendChild(iconContainer);
     cardContent.appendChild(
-      createElement("div", { className: "fw-bold p-1" }, ["Feedback ?"]),
+      createElement("div", { className: "fw-bold p-1" }, ["Feedback ?"])
     );
 
     const assistantInfo = createElement("div", {
       id: "assistantInfo",
       style: { display: "none" },
     });
+    
     assistantInfo.appendChild(
-      createElement(
-        "div",
-        {
-          className: "small fw-normal mb-2",
-          style: { marginLeft: "40px" },
-        },
-        ["AI assistant"],
-      ),
+      createElement("div", {
+        className: "small fw-normal mb-2",
+        style: { marginLeft: "40px" },
+      }, ["AI assistant"])
     );
 
     const ratingButtons = createElement("div", {
@@ -2119,25 +2033,21 @@ document.head.appendChild(gsapScript);
       style: { display: "none" },
     });
 
-    const likeBtn = createElement(
-      "button",
-      {
-        type: "button",
-        className: "border me-3 p-1 w-25",
-        style: { borderRadius: "10px" },
-      },
-      [createElement("i", { className: "fa-regular fa-thumbs-up" })],
-    );
+    const likeBtn = createElement("button", {
+      type: "button",
+      className: "border me-3 p-1 w-25",
+      style: { borderRadius: "10px" },
+    }, [
+      createElement("i", { className: "fa-regular fa-thumbs-up" }),
+    ]);
 
-    const dislikeBtn = createElement(
-      "button",
-      {
-        type: "button",
-        className: "border ms-3 p-1 w-25",
-        style: { borderRadius: "10px" },
-      },
-      [createElement("i", { className: "fa-regular fa-thumbs-down" })],
-    );
+    const dislikeBtn = createElement("button", {
+      type: "button",
+      className: "border ms-3 p-1 w-25",
+      style: { borderRadius: "10px" },
+    }, [
+      createElement("i", { className: "fa-regular fa-thumbs-down" }),
+    ]);
 
     ratingButtons.appendChild(likeBtn);
     ratingButtons.appendChild(dislikeBtn);
@@ -2155,20 +2065,17 @@ document.head.appendChild(gsapScript);
     rightIcons.appendChild(minimizeBtn);
 
     // Close button
-    const closeBtn = createElement(
-      "span",
-      {
-        className: "close-btn",
-      },
-      [createElement("i", { className: "fa-solid fa-times" })],
-    );
+    const closeBtn = createElement("span", {
+      className: "close-btn",
+    }, [
+      createElement("i", { className: "fa-solid fa-times" }),
+    ]);
     rightIcons.appendChild(closeBtn);
 
     header.appendChild(leftIcons);
     header.appendChild(textSupportCard);
     header.appendChild(rightIcons);
 
-    // ==================== BODY CONTENT ====================
     // Body
     const body = createElement("div", {
       id: "conversationBody",
@@ -2183,7 +2090,7 @@ document.head.appendChild(gsapScript);
       avatars.appendChild(
         createElement("img", {
           src: `https://i.pravatar.cc/100?img=${img}`,
-        }),
+        })
       );
     });
 
@@ -2191,7 +2098,7 @@ document.head.appendChild(gsapScript);
     statusAvatar.appendChild(
       createElement("img", {
         src: "https://i.pravatar.cc/100?img=8",
-      }),
+      })
     );
     avatars.appendChild(statusAvatar);
 
@@ -2199,58 +2106,48 @@ document.head.appendChild(gsapScript);
     const subtitle = createElement("div", { className: "subtitle" }, [
       "Welcome to Buildors!",
     ]);
-    const desc = createElement("div", { className: "desc" }, [
-      // "Sign up free or talk with our product experts.",
-    ]);
+    const desc = createElement("div", { className: "desc" }, []);
 
-    const freeTrialBtn = createElement(
-      // "button",
-      // {
-      //   className: "btn-danger",
-      //   style: {
-      //     width: "100%",
-      //     padding: "12px",
-      //     borderRadius: "10px",
-      //     border: "none",
-      //     cursor: "pointer",
-      //     fontSize: "15px",
-      //     fontWeight: "600",
-      //     marginBottom: "10px",
-      //     display: "flex",
-      //     alignItems: "center",
-      //     justifyContent: "center",
-      //     gap: "8px",
-      //     color: "#ffffff",
-      //     transition: "transform 0.3s ease",
-      //     background: "#f22727",
-      //   },
-      // },
-      // ["Free Trial"],
-    );
-
-    const letsChatBtn = createElement(
-      "button",
-      {
-        style: {
-          width: "100%",
-          padding: "12px",
-          borderRadius: "10px",
-          border: "none",
-          cursor: "pointer",
-          fontSize: "15px",
-          fontWeight: "600",
-          marginBottom: "10px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-          background: "#111827",
-          color: "#ffffff",
-          transition: "transform 0.3s ease",
-        },
+    const freeTrialBtn = createElement("button", {
+      style: {
+        width: "100%",
+        padding: "12px",
+        borderRadius: "10px",
+        border: "none",
+        cursor: "pointer",
+        fontSize: "15px",
+        fontWeight: "600",
+        marginBottom: "10px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "8px",
+        color: "#ffffff",
+        transition: "transform 0.3s ease",
+        background: "#f22727",
       },
-      ["💬 Let's Chat"],
-    );
+    }, ["Free Trial"]);
+
+    const letsChatBtn = createElement("button", {
+      style: {
+        width: "100%",
+        padding: "12px",
+        borderRadius: "10px",
+        border: "none",
+        cursor: "pointer",
+        fontSize: "15px",
+        fontWeight: "600",
+        marginBottom: "10px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "8px",
+        background: "#111827",
+        color: "#ffffff",
+        transition: "transform 0.3s ease",
+      },
+    }, ["💬 Let's Chat"]);
+
     chatboxInline.appendChild(avatars);
     chatboxInline.appendChild(welcomeTitle);
     chatboxInline.appendChild(subtitle);
@@ -2260,9 +2157,9 @@ document.head.appendChild(gsapScript);
 
     // Welcome message container
     const welcomeInfo = createElement("div", {
+      className: "welcome-info-box",
       style: {
-        background:
-          "linear-gradient(180deg, rgba(243, 245, 249, 0.95) 0%, rgba(251, 252, 253, 0) 100%)",
+        background: "linear-gradient(180deg, rgba(243, 245, 249, 0.95) 0%, rgba(251, 252, 253, 0) 100%)",
         padding: "12px",
         marginLeft: "24px",
         border: "1px solid #e0e0e0",
@@ -2288,40 +2185,41 @@ document.head.appendChild(gsapScript);
       },
     });
 
-    // API Call
+    // API Call for welcome message and options
     fetch("https://buildors.com/api/bot-config?ai_text_model=2&comp=15")
       .then((res) => res.json())
       .then((data) => {
-
-        // ✅ Set first_question
-        welcomeInfo.textContent =
-          data?.first_question || "Welcome! How can I assist you?";
-
-        // ✅ Clear previous pills (safety)
+        welcomeInfo.textContent = data?.first_question || "Welcome! How can I assist you?";
         welcomePills.innerHTML = "";
 
-        // ✅ Generate buttons from first_options
         if (data?.first_options && Array.isArray(data.first_options)) {
           data.first_options.forEach((text) => {
-            const btn = createElement(
-              "button",
-              {
-                style: {
-                  border: "1px solid #ddd",
-                  background: "#fff",
-                  borderRadius: "20px",
-                  padding: "6px 14px",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                  transition: "0.3s ease",
-                },
-                onclick: () => {
-                  console.log("User selected:", text);
-                  // yahan tum apna message send logic laga sakte ho
-                },
-              },
-              [text]
-            );
+            const btn = createElement("button", {
+              style: {
+                border: "1px solid #ddd",
+                background: "#fff",
+                borderRadius: "20px",
+                padding: "6px 14px",
+                fontSize: "12px",
+                cursor: "pointer",
+                transition: "0.3s ease",
+              }
+            }, [text]);
+
+            btn.addEventListener("mouseover", function() {
+              this.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+            });
+
+            btn.addEventListener("mouseout", function() {
+              this.style.boxShadow = "none";
+            });
+
+            btn.addEventListener("click", function() {
+              if (elements.chatInput) {
+                elements.chatInput.value = text;
+                elements.chatInput.focus();
+              }
+            });
 
             welcomePills.appendChild(btn);
           });
@@ -2332,11 +2230,18 @@ document.head.appendChild(gsapScript);
         welcomeInfo.textContent = "Unable to load message.";
       });
 
+    welcomeInfo.addEventListener("mouseover", function() {
+      this.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)";
+    });
+
+    welcomeInfo.addEventListener("mouseout", function() {
+      this.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+    });
+
     body.appendChild(chatboxInline);
     body.appendChild(welcomeInfo);
     body.appendChild(welcomePills);
 
-    // ==================== FOOTER CONTENT ====================
     // Footer
     const footer = createElement("div", {
       className: "conversation-footer",
@@ -2358,8 +2263,7 @@ document.head.appendChild(gsapScript);
         borderRadius: "16px",
         border: "1px solid #d8e0ec",
         background: "#ffffff",
-        boxShadow:
-          "0 10px 30px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
+        boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)",
         transition: "all 0.3s ease",
       },
     });
@@ -2368,34 +2272,33 @@ document.head.appendChild(gsapScript);
       id: "filePreview",
       className: "mt-3",
     });
+    
     const inputPreview = createElement("div", {
       id: "inputPreview",
       className: "d-flex flex-wrap gap-2 position-absolute start-0 p-2",
       style: { zIndex: "10", bottom: "75px", left: "0px", maxWidth: "100%" },
     });
 
-    const plusButton = createElement(
-      "button",
-      {
-        type: "button",
-        style: {
-          background: "#eef1f7",
-          border: "1px solid #d8e0ec",
-          cursor: "pointer",
-          fontSize: "16px",
-          color: "#4b5563",
-          width: "34px",
-          height: "34px",
-          borderRadius: "10px",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: "0",
-          transition: "all 0.3s ease",
-        },
+    const plusButton = createElement("button", {
+      type: "button",
+      style: {
+        background: "#eef1f7",
+        border: "1px solid #d8e0ec",
+        cursor: "pointer",
+        fontSize: "16px",
+        color: "#4b5563",
+        width: "34px",
+        height: "34px",
+        borderRadius: "10px",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: "0",
+        transition: "all 0.3s ease",
       },
-      [createElement("i", { className: "fa-solid fa-plus" })],
-    );
+    }, [
+      createElement("i", { className: "fa-solid fa-plus" }),
+    ]);
 
     const textarea = createElement("textarea", {
       id: "chatInput",
@@ -2417,51 +2320,47 @@ document.head.appendChild(gsapScript);
       },
     });
 
-    const emojiButton = createElement(
-      "button",
-      {
-        type: "button",
-        style: {
-          background: "#eef1f7",
-          border: "1px solid #d8e0ec",
-          cursor: "pointer",
-          fontSize: "16px",
-          color: "#5b5c5e",
-          transition: "all 0.3s ease",
-          width: "34px",
-          height: "34px",
-          borderRadius: "10px",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: "0",
-        },
+    const emojiButton = createElement("button", {
+      type: "button",
+      style: {
+        background: "#eef1f7",
+        border: "1px solid #d8e0ec",
+        cursor: "pointer",
+        fontSize: "16px",
+        color: "#5b5c5e",
+        transition: "all 0.3s ease",
+        width: "34px",
+        height: "34px",
+        borderRadius: "10px",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: "0",
       },
-      [createElement("i", { className: "fa-regular fa-face-smile" })],
-    );
+    }, [
+      createElement("i", { className: "fa-regular fa-face-smile" }),
+    ]);
 
-    const sendButton = createElement(
-      "button",
-      {
-        type: "button",
-        style: {
-          background: "linear-gradient(135deg, #111827, #1f2937)",
-          color: "white",
-          border: "1px solid #0f172a",
-          padding: "8px 12px",
-          fontSize: "13px",
-          borderRadius: "10px",
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "all 0.3s ease",
-          width: "34px",
-          height: "34px",
-        },
+    const sendButton = createElement("button", {
+      type: "button",
+      style: {
+        background: "linear-gradient(135deg, #111827, #1f2937)",
+        color: "white",
+        border: "1px solid #0f172a",
+        padding: "8px 12px",
+        fontSize: "13px",
+        borderRadius: "10px",
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "all 0.3s ease",
+        width: "34px",
+        height: "34px",
       },
-      [createElement("i", { className: "fa-solid fa-arrow-up" })],
-    );
+    }, [
+      createElement("i", { className: "fa-solid fa-arrow-up" }),
+    ]);
 
     inputWrapper.appendChild(filePreview);
     inputWrapper.appendChild(plusButton);
@@ -2489,54 +2388,49 @@ document.head.appendChild(gsapScript);
       },
     });
 
-    ["😀", "😁", "😂", "😊", "😍", "🤔", "👍", "🙏", "🎉", "❤️"].forEach(
-      (emoji) => {
-        emojiPicker.appendChild(
-          createElement(
-            "span",
-            {
-              style: {
-                fontSize: "20px",
-                padding: "4px",
-                cursor: "pointer",
-                borderRadius: "4px",
-                transition: "all 0.3s ease",
-              },
-            },
-            [emoji],
-          ),
-        );
-      },
-    );
+    ["😀", "😁", "😂", "😊", "😍", "🤔", "👍", "🙏", "🎉", "❤️"].forEach((emoji) => {
+      const emojiSpan = createElement("span", {
+        style: {
+          fontSize: "20px",
+          padding: "4px",
+          cursor: "pointer",
+          borderRadius: "4px",
+          transition: "all 0.3s ease",
+        },
+      }, [emoji]);
 
-    const poweredBy = createElement(
-      "div",
-      {
-        className:
-          "d-flex justify-content-center align-items-center gap-2 mt-2",
-      },
-      [
-        createElement(
-          "span",
-          {
-            style: { fontSize: "12px", color: "#555" },
-          },
-          ["Powered by "],
-        ),
-        createElement("img", {
-          src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
-          alt: "Logo",
-          style: { width: "13px", height: "13px" },
-        }),
-        createElement(
-          "span",
-          {
-            style: { fontSize: "12px", color: "#555" },
-          },
-          ["Buildors.com"],
-        ),
-      ],
-    );
+      emojiSpan.addEventListener("click", function() {
+        window.addEmoji(emoji);
+      });
+
+      emojiSpan.addEventListener("mouseover", function() {
+        this.style.background = "#f3f4f6";
+        this.style.transform = "scale(1.2)";
+      });
+
+      emojiSpan.addEventListener("mouseout", function() {
+        this.style.background = "";
+        this.style.transform = "scale(1)";
+      });
+
+      emojiPicker.appendChild(emojiSpan);
+    });
+
+    const poweredBy = createElement("div", {
+      className: "d-flex justify-content-center align-items-center gap-2 mt-2",
+    }, [
+      createElement("span", {
+        style: { fontSize: "12px", color: "#555" },
+      }, ["Powered by "]),
+      createElement("img", {
+        src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
+        alt: "Logo",
+        style: { width: "13px", height: "13px" },
+      }),
+      createElement("span", {
+        style: { fontSize: "12px", color: "#555" },
+      }, ["Buildors.com"]),
+    ]);
 
     footer.appendChild(inputWrapper);
     footer.appendChild(emojiPicker);
@@ -2554,181 +2448,104 @@ document.head.appendChild(gsapScript);
     container.appendChild(emailModal);
     container.appendChild(feedbackModal);
 
-    // Add event listeners AFTER elements are created
-    setTimeout(() => {
-      // Back arrow click
-      if (backArrow)
-        backArrow.addEventListener("click", function () {
-          window.backToChatPage();
-        });
+    // Add event listeners
+    backArrow.addEventListener("click", function() {
+      window.backToChatPage();
+    });
 
-      // More icon click
-      if (moreIcon)
-        moreIcon.addEventListener("click", function (e) {
-          e.stopPropagation();
-          window.toggleMoreMenu();
-        });
+    moreIcon.addEventListener("click", function(e) {
+      e.stopPropagation();
+      window.toggleMoreMenu();
+    });
 
-      // Text support card click
-      if (textSupportCard)
-        textSupportCard.addEventListener("click", function () {
-          window.toggleAssistantInfo();
-        });
+    textSupportCard.addEventListener("click", function() {
+      window.toggleAssistantInfo();
+    });
 
-      // Minimize button click
-      if (minimizeBtn)
-        minimizeBtn.addEventListener("click", function () {
-          window.minimizeChat();
-        });
+    minimizeBtn.addEventListener("click", function() {
+      window.minimizeChat();
+    });
 
-      // Close button click
-      if (closeBtn)
-        closeBtn.addEventListener("click", function () {
-          window.openCloseConfirm();
-        });
+    closeBtn.addEventListener("click", function() {
+      window.openCloseConfirm();
+    });
 
-      // Rating buttons click
-      if (likeBtn)
-        likeBtn.addEventListener("click", function (e) {
-          e.stopPropagation();
-          window.rateHeaderFeedback("up");
-          window.openFeedbackModal("positive");
-        });
+    likeBtn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      window.rateHeaderFeedback("up");
+      window.openFeedbackModal("positive");
+    });
 
-      if (dislikeBtn)
-        dislikeBtn.addEventListener("click", function (e) {
-          e.stopPropagation();
-          window.rateHeaderFeedback("down");
-          window.openFeedbackModal("negative");
-        });
+    dislikeBtn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      window.rateHeaderFeedback("down");
+      window.openFeedbackModal("negative");
+    });
 
-      // Plus button
-      if (plusButton)
-        plusButton.addEventListener("click", function () {
-          window.handlePlusClick();
-        });
+    plusButton.addEventListener("click", function() {
+      window.handlePlusClick();
+    });
 
-      // Emoji button
-      if (emojiButton)
-        emojiButton.addEventListener("click", function () {
-          window.toggleEmojiPicker();
-        });
+    emojiButton.addEventListener("click", function() {
+      window.toggleEmojiPicker();
+    });
 
-      // Send button
-      if (sendButton)
-        sendButton.addEventListener("click", function () {
-          window.sendMessage();
-        });
+    sendButton.addEventListener("click", function() {
+      window.sendMessage();
+    });
 
-      // Let's Chat button
-      if (letsChatBtn)
-        letsChatBtn.addEventListener("click", function () {
-          window.hideChatboxInline();
-          window.openFullChat();
-        });
+    letsChatBtn.addEventListener("click", function() {
+      window.hideChatboxInline();
+      window.openFullChat();
+    });
 
-      // Free Trial button hover effects
-      if (freeTrialBtn) {
-        freeTrialBtn.addEventListener("mouseover", function () {
-          this.style.background = "#e21b1b";
-          this.style.transform = "translateY(-2px)";
-        });
+    freeTrialBtn.addEventListener("mouseover", function() {
+      this.style.background = "#e21b1b";
+      this.style.transform = "translateY(-2px)";
+    });
 
-        freeTrialBtn.addEventListener("mouseout", function () {
-          this.style.background = "#f22727";
-          this.style.transform = "translateY(0)";
-        });
-      }
+    freeTrialBtn.addEventListener("mouseout", function() {
+      this.style.background = "#f22727";
+      this.style.transform = "translateY(0)";
+    });
 
-      // Lets Chat button hover effects
-      if (letsChatBtn) {
-        letsChatBtn.addEventListener("mouseover", function () {
-          this.style.background = "#1f2937";
-          this.style.transform = "translateY(-2px)";
-        });
+    letsChatBtn.addEventListener("mouseover", function() {
+      this.style.background = "#1f2937";
+      this.style.transform = "translateY(-2px)";
+    });
 
-        letsChatBtn.addEventListener("mouseout", function () {
-          this.style.background = "#111827";
-          this.style.transform = "translateY(0)";
-        });
-      }
+    letsChatBtn.addEventListener("mouseout", function() {
+      this.style.background = "#111827";
+      this.style.transform = "translateY(0)";
+    });
 
-      // Welcome pills buttons hover effects
-      const welcomePillButtons = welcomePills.querySelectorAll("button");
-      welcomePillButtons.forEach((button) => {
-        button.addEventListener("mouseover", function () {
-          this.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-        });
+    sendButton.addEventListener("mouseover", function() {
+      this.style.background = "linear-gradient(135deg, #0b1220, #111827)";
+      this.style.transform = "translateY(-1px)";
+    });
 
-        button.addEventListener("mouseout", function () {
-          this.style.boxShadow = "none";
-        });
-      });
+    sendButton.addEventListener("mouseout", function() {
+      this.style.background = "linear-gradient(135deg, #111827, #1f2937)";
+      this.style.transform = "translateY(0)";
+    });
 
-      // Welcome info hover effects
-      if (welcomeInfo) {
-        welcomeInfo.addEventListener("mouseover", function () {
-          this.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)";
-        });
+    plusButton.addEventListener("mouseover", function() {
+      this.style.background = "#e5eaf2";
+      this.style.color = "#0f172a";
+    });
 
-        welcomeInfo.addEventListener("mouseout", function () {
-          this.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-        });
-      }
+    plusButton.addEventListener("mouseout", function() {
+      this.style.background = "#eef1f7";
+      this.style.color = "#4b5563";
+    });
 
-      // Emoji picker items
-      const emojiSpans = emojiPicker.querySelectorAll("span");
-      emojiSpans.forEach((span) => {
-        span.addEventListener("click", function () {
-          const emoji = this.textContent;
-          window.addEmoji(emoji);
-        });
+    plusButton.addEventListener("mousedown", function() {
+      this.style.transform = "scale(0.97)";
+    });
 
-        span.addEventListener("mouseover", function () {
-          this.style.background = "#f3f4f6";
-          this.style.transform = "scale(1.2)";
-        });
-
-        span.addEventListener("mouseout", function () {
-          this.style.background = "";
-          this.style.transform = "scale(1)";
-        });
-      });
-
-      // Send button hover effects
-      if (sendButton) {
-        sendButton.addEventListener("mouseover", function () {
-          this.style.background = "linear-gradient(135deg, #0b1220, #111827)";
-          this.style.transform = "translateY(-1px)";
-        });
-
-        sendButton.addEventListener("mouseout", function () {
-          this.style.background = "linear-gradient(135deg, #111827, #1f2937)";
-          this.style.transform = "translateY(0)";
-        });
-      }
-
-      // Plus button hover effects
-      if (plusButton) {
-        plusButton.addEventListener("mouseover", function () {
-          this.style.background = "#e5eaf2";
-          this.style.color = "#0f172a";
-        });
-
-        plusButton.addEventListener("mouseout", function () {
-          this.style.background = "#eef1f7";
-          this.style.color = "#4b5563";
-        });
-
-        plusButton.addEventListener("mousedown", function () {
-          this.style.transform = "scale(0.97)";
-        });
-
-        plusButton.addEventListener("mouseup", function () {
-          this.style.transform = "scale(1)";
-        });
-      }
-    }, 100);
+    plusButton.addEventListener("mouseup", function() {
+      this.style.transform = "scale(1)";
+    });
 
     return container;
   }
@@ -2739,55 +2556,34 @@ document.head.appendChild(gsapScript);
       className: "more-menu",
     });
 
-    const soundToggle = createElement(
-      "div",
-      {
-        className: "more-menu-item sound-toggle-wrapper",
-      },
-      [
-        createElement("i", {
-          id: "soundIcon",
-          className: "fa-solid fa-volume-high",
+    const soundToggle = createElement("div", {
+      className: "more-menu-item sound-toggle-wrapper",
+    }, [
+      createElement("i", {
+        id: "soundIcon",
+        className: "fa-solid fa-volume-high",
+      }),
+      createElement("span", { id: "soundText" }, ["Sound"]),
+      createElement("label", { className: "custom-toggle" }, [
+        createElement("input", {
+          type: "checkbox",
+          id: "soundToggle",
+          className: "toggle-input",
+          checked: true,
         }),
-        createElement("span", { id: "soundText" }, ["Sound"]),
-        createElement("label", { className: "custom-toggle" }, [
-          createElement("input", {
-            type: "checkbox",
-            id: "soundToggle",
-            className: "toggle-input",
-            checked: true,
-          }),
-          createElement("div", { className: "toggle-slider" }),
-        ]),
-      ],
-    );
+        createElement("div", { className: "toggle-slider" }),
+      ]),
+    ]);
 
-    const emailItem = createElement(
-      "div",
-      {
-        className: "more-menu-item",
-      },
-      [
-        createElement("i", { className: "fa-solid fa-envelope" }),
-        createElement("span", {}, ["Send transcript"]),
-      ],
-    );
+    const emailItem = createElement("div", {
+      className: "more-menu-item",
+    }, [
+      createElement("i", { className: "fa-solid fa-envelope" }),
+      createElement("span", {}, ["Send transcript"]),
+    ]);
 
     menu.appendChild(soundToggle);
     menu.appendChild(emailItem);
-
-    // Add event listeners AFTER the menu is appended to DOM
-    setTimeout(() => {
-      const soundToggleInput = document.getElementById("soundToggle");
-      if (soundToggleInput) {
-        soundToggleInput.addEventListener("change", handleSoundToggle);
-      }
-
-      emailItem.addEventListener("click", function (e) {
-        e.stopPropagation();
-        window.openEmailSubscription();
-      });
-    }, 100);
 
     return menu;
   }
@@ -2801,19 +2597,17 @@ document.head.appendChild(gsapScript);
 
     const modal = createElement("div", { className: "close-modal" });
 
-    const closeX = createElement(
-      "span",
-      {
-        className: "modal-close-x",
-      },
-      [createElement("i", { className: "fa-solid fa-times" })],
-    );
+    const closeX = createElement("span", {
+      className: "modal-close-x",
+    }, [
+      createElement("i", { className: "fa-solid fa-times" }),
+    ]);
 
     const iconWrap = createElement("div", {
       className: "close-modal-icon-wrap",
     });
     iconWrap.appendChild(
-      createElement("i", { className: "fa-solid fa-arrow-right-from-bracket" }),
+      createElement("i", { className: "fa-solid fa-arrow-right-from-bracket" })
     );
 
     const title = createElement("h3", {}, [
@@ -2822,17 +2616,13 @@ document.head.appendChild(gsapScript);
       document.createTextNode("the chat?"),
     ]);
 
-    const closeButton = createElement(
-      "button",
-      {
-        className: "primary",
-        style: {
-          background: "#d82b2b",
-          color: "white",
-        },
+    const closeButton = createElement("button", {
+      className: "primary",
+      style: {
+        background: "#d82b2b",
+        color: "white",
       },
-      ["Close the Chat"],
-    );
+    }, ["Close the Chat"]);
 
     modal.appendChild(closeX);
     modal.appendChild(iconWrap);
@@ -2840,25 +2630,21 @@ document.head.appendChild(gsapScript);
     modal.appendChild(closeButton);
     overlay.appendChild(modal);
 
-    // Add event listeners
-    setTimeout(() => {
-      closeX.addEventListener("click", function (e) {
-        e.stopPropagation();
+    closeX.addEventListener("click", function(e) {
+      e.stopPropagation();
+      window.hideCloseConfirm();
+    });
+
+    closeButton.addEventListener("click", function(e) {
+      e.stopPropagation();
+      window.confirmCloseChat();
+    });
+
+    overlay.addEventListener("click", function(e) {
+      if (e.target === overlay) {
         window.hideCloseConfirm();
-      });
-
-      closeButton.addEventListener("click", function (e) {
-        e.stopPropagation();
-        window.confirmCloseChat();
-      });
-
-      // Close when clicking outside modal
-      overlay.addEventListener("click", function (e) {
-        if (e.target === overlay) {
-          window.hideCloseConfirm();
-        }
-      });
-    }, 100);
+      }
+    });
 
     return overlay;
   }
@@ -2874,19 +2660,17 @@ document.head.appendChild(gsapScript);
       className: "email-subscription-modal",
     });
 
-    const closeX = createElement(
-      "span",
-      {
-        className: "modal-close-x",
-      },
-      [createElement("i", { className: "fa-solid fa-times" })],
-    );
+    const closeX = createElement("span", {
+      className: "modal-close-x",
+    }, [
+      createElement("i", { className: "fa-solid fa-times" }),
+    ]);
 
     const iconWrap = createElement("div", {
       className: "email-modal-icon-wrap",
     });
     iconWrap.appendChild(
-      createElement("i", { className: "fa-solid fa-envelope" }),
+      createElement("i", { className: "fa-solid fa-envelope" })
     );
 
     const title = createElement("h3", {}, ["Subscribe to Email Updates"]);
@@ -2905,26 +2689,22 @@ document.head.appendChild(gsapScript);
       required: true,
     });
 
-    const subscribeButton = createElement(
-      "button",
-      {
-        type: "submit",
-        className: "subscribe-btn",
-        style: {
-          background: "#212529",
-          color: "#ffffff",
-          padding: "12px 28px",
-          fontSize: "16px",
-          fontWeight: "600",
-          border: "none",
-          borderRadius: "6px",
-          cursor: "pointer",
-          transition: "all 0.3s ease",
-          marginTop: "10px",
-        },
+    const subscribeButton = createElement("button", {
+      type: "submit",
+      className: "subscribe-btn",
+      style: {
+        background: "#212529",
+        color: "#ffffff",
+        padding: "12px 28px",
+        fontSize: "16px",
+        fontWeight: "600",
+        border: "none",
+        borderRadius: "6px",
+        cursor: "pointer",
+        transition: "all 0.3s ease",
+        marginTop: "10px",
       },
-      ["Subscribe"],
-    );
+    }, ["Subscribe"]);
 
     form.appendChild(emailInput);
     form.appendChild(subscribeButton);
@@ -2936,78 +2716,41 @@ document.head.appendChild(gsapScript);
     modal.appendChild(form);
     overlay.appendChild(modal);
 
-    // Add event listeners
-    setTimeout(() => {
-      closeX.addEventListener("click", function (e) {
-        e.stopPropagation();
+    closeX.addEventListener("click", function(e) {
+      e.stopPropagation();
+      window.hideEmailSubscription();
+    });
+
+    overlay.addEventListener("click", function(e) {
+      if (e.target === overlay) {
         window.hideEmailSubscription();
-      });
+      }
+    });
 
-      // Close when clicking outside modal
-      overlay.addEventListener("click", function (e) {
-        if (e.target === overlay) {
-          window.hideEmailSubscription();
-        }
-      });
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+      window.handleEmailSubscription(e);
+    });
 
-      // Form submission
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        window.handleEmailSubscription(e);
-      });
+    subscribeButton.addEventListener("mouseover", function() {
+      this.style.backgroundColor = "#000000";
+      this.style.transform = "translateY(-2px)";
+    });
 
-      // Subscribe button hover effects
-      subscribeButton.addEventListener("mouseover", function () {
-        this.style.backgroundColor = "#000000";
-        this.style.transform = "translateY(-2px)";
-      });
+    subscribeButton.addEventListener("mouseout", function() {
+      this.style.backgroundColor = "#212529";
+      this.style.transform = "translateY(0)";
+    });
 
-      subscribeButton.addEventListener("mouseout", function () {
-        this.style.backgroundColor = "#212529";
-        this.style.transform = "translateY(0)";
-      });
+    subscribeButton.addEventListener("mousedown", function() {
+      this.style.transform = "scale(0.98)";
+    });
 
-      subscribeButton.addEventListener("mousedown", function () {
-        this.style.transform = "scale(0.98)";
-      });
-
-      subscribeButton.addEventListener("mouseup", function () {
-        this.style.transform = "scale(1)";
-      });
-    }, 100);
+    subscribeButton.addEventListener("mouseup", function() {
+      this.style.transform = "scale(1)";
+    });
 
     return overlay;
-  }
-
-
-
-  function doPost(e) {
-    try {
-      var email = e.parameter.email || "";
-      if (!email || !email.includes("@")) {
-        return ContentService.createTextOutput("Error: Invalid email").setMimeType(ContentService.MimeType.TEXT);
-      }
-
-      var subject = "Subscription Confirmed! 🎉";
-      var body = `
-<h2>Thank you for subscribing!</h2>
-<p>Hi,</p>
-<p>You have successfully subscribed with <b>${email}</b>.</p>
-<p>We will keep you updated with new features and news from Buildors.</p>
-<p style="color:#666; font-size:0.9em;">Didn't subscribe? Just ignore this email.</p>
-<p>Best regards,<br>Buildors Team</p>
-    `;
-
-      MailApp.sendEmail({
-        to: email,
-        subject: subject,
-        htmlBody: body
-      });
-
-      return ContentService.createTextOutput("Success").setMimeType(ContentService.MimeType.TEXT);
-    } catch (err) {
-      return ContentService.createTextOutput("Error: " + err.message).setMimeType(ContentService.MimeType.TEXT);
-    }
   }
 
   function createFeedbackModal() {
@@ -3021,13 +2764,11 @@ document.head.appendChild(gsapScript);
       className: "feedback-modal",
     });
 
-    const closeX = createElement(
-      "span",
-      {
-        className: "modal-close-x",
-      },
-      [createElement("i", { className: "fa-solid fa-times" })],
-    );
+    const closeX = createElement("span", {
+      className: "modal-close-x",
+    }, [
+      createElement("i", { className: "fa-solid fa-times" }),
+    ]);
 
     const iconWrap = createElement("div", {
       className: "feedback-modal-icon-wrap",
@@ -3037,7 +2778,7 @@ document.head.appendChild(gsapScript);
       createElement("i", {
         id: "feedbackIcon",
         className: "fa-solid fa-heart",
-      }),
+      })
     );
 
     const title = createElement("h3", { id: "feedbackTitle" }, [
@@ -3069,27 +2810,23 @@ document.head.appendChild(gsapScript);
       value: "",
     });
 
-    const submitButton = createElement(
-      "button",
-      {
-        type: "submit",
-        className: "submit-feedback-btn",
-        id: "submitFeedbackBtn",
-        style: {
-          background: "#212529",
-          color: "#ffffff",
-          padding: "12px 28px",
-          fontSize: "16px",
-          fontWeight: "600",
-          border: "none",
-          borderRadius: "6px",
-          cursor: "pointer",
-          transition: "all 0.3s ease",
-          marginTop: "10px",
-        },
+    const submitButton = createElement("button", {
+      type: "submit",
+      className: "submit-feedback-btn",
+      id: "submitFeedbackBtn",
+      style: {
+        background: "#212529",
+        color: "#ffffff",
+        padding: "12px 28px",
+        fontSize: "16px",
+        fontWeight: "600",
+        border: "none",
+        borderRadius: "6px",
+        cursor: "pointer",
+        transition: "all 0.3s ease",
+        marginTop: "10px",
       },
-      ["Submit Feedback"],
-    );
+    }, ["Submit Feedback"]);
 
     form.appendChild(feedbackTypeButtons);
     form.appendChild(hiddenFeedbackType);
@@ -3103,161 +2840,113 @@ document.head.appendChild(gsapScript);
     modal.appendChild(form);
     overlay.appendChild(modal);
 
-    // Add event listeners
-    setTimeout(() => {
-      closeX.addEventListener("click", function (e) {
-        e.stopPropagation();
+    closeX.addEventListener("click", function(e) {
+      e.stopPropagation();
+      window.hideFeedbackModal();
+    });
+
+    overlay.addEventListener("click", function(e) {
+      if (e.target === overlay) {
         window.hideFeedbackModal();
-      });
+      }
+    });
 
-      // Close when clicking outside modal
-      overlay.addEventListener("click", function (e) {
-        if (e.target === overlay) {
-          window.hideFeedbackModal();
-        }
-      });
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+      window.handleFeedbackSubmit(e);
+    });
 
-      // Form submission
-      form.addEventListener("submit", async function (e) {
-        e.preventDefault();
+    submitButton.addEventListener("mouseover", function() {
+      this.style.backgroundColor = "#000000";
+      this.style.transform = "translateY(-2px)";
+    });
 
-        const email = emailInput.value.trim();
-        if (!email || !email.includes("@")) {
-          alert("Please enter a valid email address.");
-          return;
-        }
+    submitButton.addEventListener("mouseout", function() {
+      this.style.backgroundColor = "#212529";
+      this.style.transform = "translateY(0)";
+    });
 
-        subscribeButton.disabled = true;
-        subscribeButton.textContent = "Subscribing...";
+    submitButton.addEventListener("mousedown", function() {
+      this.style.transform = "scale(0.98)";
+    });
 
-        try {
-          const formData = new FormData();
-          formData.append("email", email);
-
-          const response = await fetch("YOUR_APPS_SCRIPT_WEB_APP_URL_HERE", {  // ← yahan URL daal
-            method: "POST",
-            body: formData
-          });
-
-          const result = await response.text();
-
-          if (result === "Success") {
-            alert("Thank you! Subscription confirmed — check your inbox. 🎉");
-            window.hideEmailSubscription();
-            form.reset();
-          } else {
-            alert("Error: " + result);
-          }
-        } catch (err) {
-          alert("Network error. Please try again.");
-          console.error(err);
-        } finally {
-          subscribeButton.disabled = false;
-          subscribeButton.textContent = "Subscribe";
-        }
-      });
-
-      // Feedback type button clicks
-      feedbackTypeButtons.addEventListener("click", function (e) {
-        const button = e.target.closest(".feedback-type-btn");
-        if (button) {
-          // Remove active class from all buttons
-          document.querySelectorAll(".feedback-type-btn").forEach((btn) => {
-            btn.classList.remove("active");
-          });
-
-          // Add active class to clicked button
-          button.classList.add("active");
-
-          // Update hidden input
-          const type = button.getAttribute("data-type");
-          document.getElementById("feedbackType").value = type;
-
-          // Update UI based on type
-          const icon = document.getElementById("feedbackIcon");
-          const title = document.getElementById("feedbackTitle");
-          const description = document.getElementById("feedbackDescription");
-
-          switch (type) {
-            case "positive":
-              icon.className = "fa-solid fa-thumbs-up";
-              title.textContent = "Positive Feedback";
-              description.textContent = "What did you like about our service?";
-              break;
-            case "negative":
-              icon.className = "fa-solid fa-thumbs-down";
-              title.textContent = "Negative Feedback";
-              description.textContent = "What can we improve?";
-              break;
-            case "suggestion":
-              icon.className = "fa-solid fa-lightbulb";
-              title.textContent = "Share Your Suggestion";
-              description.textContent = "We'd love to hear your ideas!";
-              break;
-          }
-        }
-      });
-
-      // Submit button hover effects
-      submitButton.addEventListener("mouseover", function () {
-        this.style.backgroundColor = "#000000";
-        this.style.transform = "translateY(-2px)";
-      });
-
-      submitButton.addEventListener("mouseout", function () {
-        this.style.backgroundColor = "#212529";
-        this.style.transform = "translateY(0)";
-      });
-
-      submitButton.addEventListener("mousedown", function () {
-        this.style.transform = "scale(0.98)";
-      });
-
-      submitButton.addEventListener("mouseup", function () {
-        this.style.transform = "scale(1)";
-      });
-
-      // Feedback type button hover effects
-      document.querySelectorAll(".feedback-type-btn").forEach((btn) => {
-        btn.addEventListener("mouseover", function () {
-          if (!this.classList.contains("active")) {
-            this.style.borderColor = "#3255a0";
-          }
-        });
-
-        btn.addEventListener("mouseout", function () {
-          if (!this.classList.contains("active")) {
-            this.style.borderColor = "#d1d5db";
-          }
-        });
-      });
-    }, 100);
+    submitButton.addEventListener("mouseup", function() {
+      this.style.transform = "scale(1)";
+    });
 
     return overlay;
   }
 
-  // === Main Functions ===
+  function isOutOfScope(query) {
+    const keywords = ["agent", "human help", "live support", "out of syllabus", "connect to agent", "real person"];
+    return keywords.some(word => query.toLowerCase().includes(word));
+  }
+
+  function connectToLiveChat() {
+    if (socket && socket.connected) return;
+    
+    // Simulate socket connection
+    socket = {
+      connected: true,
+      emit: function(event, data) {
+        console.log("Live chat message:", data);
+        // Simulate agent response after 2 seconds
+        setTimeout(() => {
+          if (this.onreceive) {
+            this.onreceive({ text: "Agent: How can I help you?" });
+          }
+        }, 2000);
+      },
+      onreceive: null
+    };
+    
+    socket.onreceive = function(data) {
+      if (data && data.text) {
+        createTypingEffect(data.text).then(() => {
+          saveMessage({ sender: "agent", text: data.text });
+          playNotificationSound();
+        });
+
+        if (data.text.toLowerCase().includes("resume ai") || data.text.toLowerCase().includes("back to ai")) {
+          chatMode = "chatbot";
+          addSystemMessage("Agent allowed – switching back to AI assistant.");
+        }
+      }
+    };
+  }
+
+  function addSystemMessage(text) {
+    if (!elements.conversationBody) return;
+    
+    const systemDiv = createElement("div", {
+      style: {
+        textAlign: "center",
+        fontSize: "12px",
+        color: "#6b7280",
+        margin: "10px 0",
+        fontStyle: "italic"
+      }
+    }, [text]);
+    
+    elements.conversationBody.appendChild(systemDiv);
+    elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
+  }
 
   // === Main Functions ===
   function initializeChat() {
     try {
-      console.log("Initializing chat widget...");
-
-      // Create and append all elements to body
       addChatWidgetStyles();
 
       document.body.appendChild(createFloatingButton());
       document.body.appendChild(createChatPage());
       document.body.appendChild(createFullChat());
 
-      // Store references to key elements
       elements.chatPage = document.getElementById("chatPage");
       elements.fullChat = document.getElementById("fullChat");
       elements.conversationBody = document.getElementById("conversationBody");
       elements.chatInput = document.getElementById("chatInput");
       elements.soundToggle = document.getElementById("soundToggle");
 
-      // Initialize event listeners
       setupChatInputEvents();
       setupConversationScrollShadow();
       updateSoundUI();
@@ -3266,25 +2955,15 @@ document.head.appendChild(gsapScript);
         elements.soundToggle.addEventListener("change", handleSoundToggle);
       }
 
-      // ✅ CHECK IF USER HAS VISITED BEFORE
       const hasVisited = localStorage.getItem("chat_has_visited");
       const messages = JSON.parse(localStorage.getItem(CHAT_MESSAGES_KEY) || "[]");
 
-      console.log("Has visited before:", hasVisited);
-      console.log("Existing messages count:", messages.length);
-
-      // Agar pehli baar visit kiya hai aur koi message nahi hai to welcome message dikhao
       if (!hasVisited && messages.length === 0) {
-        console.log("First time user - showing welcome message");
-
-        // Thoda delay do taaki sab load ho jaye
         setTimeout(() => {
           addWelcomeMessage();
           localStorage.setItem("chat_has_visited", "true");
-        }, 1500); // 1.5 second delay
+        }, 1500);
       } else {
-        console.log("Returning user - loading existing messages");
-        // Load existing messages
         loadMessages();
       }
 
@@ -3293,18 +2972,17 @@ document.head.appendChild(gsapScript);
 
     } catch (error) {
       console.error("Error in initializeChat:", error);
-      // Fallback - create a simple chat button
       const fallbackButton = document.createElement("div");
       fallbackButton.id = "fallbackChatButton";
       fallbackButton.innerHTML = "💬 Chat";
-      fallbackButton.style.cssText =
-        "position:fixed;bottom:30px;right:30px;background:#3255a0;color:white;padding:15px;border-radius:50%;cursor:pointer;z-index:1000;";
-      fallbackButton.onclick = function () {
+      fallbackButton.style.cssText = "position:fixed;bottom:30px;right:30px;background:#3255a0;color:white;padding:15px;border-radius:50%;cursor:pointer;z-index:1000;";
+      fallbackButton.onclick = function() {
         alert("Chat widget failed to load. Please refresh the page.");
       };
       document.body.appendChild(fallbackButton);
     }
   }
+
   function loadMessages() {
     try {
       const raw = localStorage.getItem(CHAT_MESSAGES_KEY) || "[]";
@@ -3337,12 +3015,11 @@ document.head.appendChild(gsapScript);
         createElement("img", {
           src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
           alt: "AI",
-        }),
+        })
       );
 
       const bubble = createElement("div", { className: "chat-bubble ai" });
       const innerDiv = createElement("div", { className: "ai-bubble-inner" });
-
       const textSpan = createElement("span", { className: "ai-text" });
       textSpan.textContent = msg.text;
 
@@ -3351,24 +3028,39 @@ document.head.appendChild(gsapScript);
       row.appendChild(avatar);
       row.appendChild(bubble);
       elements.conversationBody.appendChild(row);
-
-      if (isAssistantInfoShown) {
-        const ratingButtons = document.getElementById("ratingButtons");
-        if (ratingButtons) ratingButtons.style.display = "flex";
-      }
-    } else {
+    } else if (msg.sender === "user") {
       const bubble = createElement("div", { className: "chat-bubble user" });
       bubble.textContent = msg.text;
       elements.conversationBody.appendChild(bubble);
+    } else if (msg.sender === "agent") {
+      const row = createElement("div", { className: "chat-ai-row" });
+
+      const avatar = createElement("div", { className: "chat-ai-avatar" });
+      avatar.appendChild(
+        createElement("img", {
+          src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
+          alt: "Agent",
+        })
+      );
+
+      const bubble = createElement("div", { className: "chat-bubble ai", style: { background: "#d1fae5" } });
+      const innerDiv = createElement("div", { className: "ai-bubble-inner" });
+      const textSpan = createElement("span", { className: "ai-text" });
+      textSpan.textContent = msg.text;
+
+      innerDiv.appendChild(textSpan);
+      bubble.appendChild(innerDiv);
+      row.appendChild(avatar);
+      row.appendChild(bubble);
+      elements.conversationBody.appendChild(row);
     }
 
-    elements.conversationBody.scrollTop =
-      elements.conversationBody.scrollHeight;
+    elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
   }
 
   // === Event Handlers ===
 
-  window.openProductExpert = function () {
+  window.openProductExpert = function() {
     const lastState = localStorage.getItem(CHAT_STATE_KEY) || "chatPage";
     setMinimized(false);
 
@@ -3379,7 +3071,7 @@ document.head.appendChild(gsapScript);
     }
   };
 
-  window.openChatPage = function () {
+  window.openChatPage = function() {
     hideAllChatViews();
     if (elements.chatPage) {
       elements.chatPage.style.display = "flex";
@@ -3390,7 +3082,7 @@ document.head.appendChild(gsapScript);
     saveChatState("chatPage");
   };
 
-  window.minimizeChat = function () {
+  window.minimizeChat = function() {
     if (elements.chatPage && elements.chatPage.style.display === "flex") {
       elements.chatPage.classList.remove("show");
       setTimeout(() => {
@@ -3406,7 +3098,7 @@ document.head.appendChild(gsapScript);
     setMinimized(true);
   };
 
-  window.openFullChat = function () {
+  window.openFullChat = function() {
     if (elements.chatPage) elements.chatPage.classList.remove("show");
     if (elements.fullChat) {
       elements.fullChat.style.display = "flex";
@@ -3415,13 +3107,10 @@ document.head.appendChild(gsapScript);
       }, 10);
     }
 
-    // ✅ CHECK KARO AGAR KOI MESSAGE NAHI HAI TO WELCOME MESSAGE DIKHAO
     const messages = JSON.parse(localStorage.getItem(CHAT_MESSAGES_KEY) || "[]");
     const hasVisited = localStorage.getItem("chat_has_visited");
 
-    // Agar pehli baar hai aur koi message nahi hai to welcome message dikhao
     if (!hasVisited && messages.length === 0 && elements.conversationBody) {
-      // Check if welcome message already exists
       const existingMessages = elements.conversationBody.querySelectorAll('.chat-ai-row, .chat-bubble.user');
       if (existingMessages.length === 0) {
         setTimeout(() => {
@@ -3431,7 +3120,6 @@ document.head.appendChild(gsapScript);
       }
     }
 
-    // Show welcome content when opening full chat
     const intro = document.querySelector(".chatbox-inline");
     const welcomeInfo = document.querySelector(".welcome-info-box");
     const welcomePills = document.querySelector(".welcome-pills");
@@ -3450,7 +3138,7 @@ document.head.appendChild(gsapScript);
     setMinimized(false);
   };
 
-  window.backToChatPage = function () {
+  window.backToChatPage = function() {
     if (elements.fullChat) {
       elements.fullChat.classList.remove("show");
       setTimeout(() => {
@@ -3458,14 +3146,12 @@ document.head.appendChild(gsapScript);
       }, 300);
     }
   };
-  // ✅ YEH FUNCTION PEHLE SE HONA CHAHIYE - Agar nahi hai to add karo
-  async function createTypingEffect(text) {
+
+  async function createTypingEffect(text, speed = 5) {
     return new Promise((resolve) => {
       try {
-        // Create the AI message row structure
         const row = createElement("div", { className: "chat-ai-row" });
 
-        // Avatar
         const avatar = createElement("div", { className: "chat-ai-avatar" });
         avatar.appendChild(
           createElement("img", {
@@ -3474,16 +3160,13 @@ document.head.appendChild(gsapScript);
           })
         );
 
-        // Bubble container
         const bubble = createElement("div", { className: "chat-bubble ai" });
         const innerDiv = createElement("div", { className: "ai-bubble-inner" });
 
-        // Create a span for the typing effect
         const textSpan = createElement("span", {
           className: "ai-text typing-active"
         });
 
-        // Create cursor element
         const cursor = createElement("span", {
           className: "typing-cursor",
           style: {
@@ -3502,23 +3185,18 @@ document.head.appendChild(gsapScript);
         row.appendChild(avatar);
         row.appendChild(bubble);
 
-        // Add to conversation body
         elements.conversationBody.appendChild(row);
         elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
 
-        // Typing animation variables
         let i = 0;
-        const speed = 5; // Typing speed in milliseconds
 
         function typeWriter() {
           if (i < text.length) {
             textSpan.innerHTML += text.charAt(i);
             i++;
-            // Auto-scroll as text appears
             elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
             setTimeout(typeWriter, speed);
           } else {
-            // Typing complete - remove cursor
             if (cursor && cursor.parentNode) {
               cursor.remove();
             }
@@ -3527,12 +3205,9 @@ document.head.appendChild(gsapScript);
           }
         }
 
-        // Start typing after a small delay
         setTimeout(typeWriter, 100);
-
       } catch (err) {
         console.error("Error in typing effect:", err);
-        // Fallback
         const fallbackRow = createAiBubble(text);
         elements.conversationBody.appendChild(fallbackRow);
         resolve();
@@ -3540,174 +3215,6 @@ document.head.appendChild(gsapScript);
     });
   }
 
-  // ✅ CSS for cursor animation (agar nahi hai to add karo)
-  function addTypingCursorStyles() {
-    const style = document.createElement("style");
-    style.textContent = `
-    @keyframes blink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0; }
-    }
-    
-    .typing-cursor {
-      animation: blink 1s infinite;
-    }
-    
-    .chat-bubble.ai .ai-text {
-      display: inline;
-    }
-  `;
-    document.head.appendChild(style);
-  }
-
-  // Add this CSS for cursor animation
-  function addTypingCursorStyles() {
-    const style = document.createElement("style");
-    style.textContent = `
-    @keyframes blink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0; }
-    }
-    
-    .typing-cursor {
-      animation: blink 1s infinite;
-    }
-    
-    .chat-bubble.ai .ai-text {
-      display: inline;
-    }
-  `;
-    document.head.appendChild(style);
-  }
-
-  // Call this in your initializeChat function
-  addTypingCursorStyles();
-  window.hideChatboxInline = function () {
-    const el = document.querySelector(".chatbox-inline");
-    if (el) el.style.display = "none";
-  };
-
-  window.sendMessage = async function () {
-    if (!elements.chatInput) return;
-
-    const message = elements.chatInput.value.trim();
-    if (!message) {
-      elements.chatInput.style.borderColor = "#ef4444";
-      setTimeout(() => {
-        elements.chatInput.style.borderColor = "";
-      }, 500);
-      return;
-    }
-
-    if (message.length > 5000) {
-      alert("Message is too long. Please keep it under 5000 characters.");
-      return;
-    }
-
-    const sendButton = document.querySelector(".conversation-send");
-    if (sendButton && sendButton.disabled) return;
-
-    if (sendButton) {
-      sendButton.disabled = true;
-      sendButton.style.opacity = "0.5";
-      sendButton.style.cursor = "not-allowed";
-    }
-
-    const intros = document.querySelectorAll(".chatbox-inline, .welcome-pills");
-    intros.forEach((intro) => (intro.style.display = "none"));
-
-    const userBubble = createElement("div", { className: "chat-bubble user" });
-    userBubble.textContent = message;
-    elements.conversationBody.appendChild(userBubble);
-    elements.conversationBody.scrollTop =
-      elements.conversationBody.scrollHeight;
-
-    elements.chatInput.value = "";
-    elements.chatInput.style.height = "auto";
-    elements.chatInput.style.height = "30px";
-    elements.chatInput.focus();
-
-    const inputPreview = document.getElementById("inputPreview");
-    if (inputPreview) {
-      inputPreview.innerHTML = "";
-    }
-
-    saveMessage({ sender: "user", text: message });
-    sessionUserMessages++;
-
-    await simulateAiResponse(message);
-
-    if (sendButton) {
-      sendButton.disabled = false;
-      sendButton.style.opacity = "1";
-      sendButton.style.cursor = "pointer";
-    }
-  };
-
-  async function simulateAiResponse(userMessage) {
-    const typingDiv = createElement("div", { className: "typing" });
-    typingDiv.innerHTML = "<span></span><span></span><span></span>";
-    elements.conversationBody.appendChild(typingDiv);
-    elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
-
-    try {
-      let sessionKey = localStorage.getItem("chat_session_key");
-
-      if (!sessionKey) {
-        sessionKey = "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem("chat_session_key", sessionKey);
-      }
-
-      // Direct API call to Buildors
-
-      const url = `${CONFIG.AI_BASE_URL}?ai_text_model=${CONFIG.AI_TEXT_MODEL}&comp=${CONFIG.COMP}&query=${encodeURIComponent(userMessage)}&session_key=${sessionKey}&api_key=${CONFIG.API_KEY}`;
-
-      const response = await fetch(url);
-      const data = await response.json();
-
-      // Remove typing indicator
-      typingDiv.remove();
-
-      let aiReply = data.response || data.result || data.reply || data.message || data.text;
-      if (!aiReply || aiReply.trim().length === 0) {
-        aiReply = "I received your message but couldn't generate a proper response.";
-      }
-
-      const cleanReply = aiReply.trim();
-
-      // Create AI bubble with typing effect - AWAIT it properly
-      await createTypingEffect(cleanReply, 5, 0);
-
-      // Save message AFTER typing effect completes
-      saveMessage({ sender: "ai", text: cleanReply });
-      playNotificationSound();
-
-      if (data.session_key) {
-        localStorage.setItem("chat_session_key", data.session_key);
-      }
-
-      checkMessageCountAndToggleAssistantInfo();
-    } catch (err) {
-      typingDiv.remove();
-      console.error("❌ Error getting AI response:", err);
-
-      let errorMessage = "Sorry, I'm having trouble responding. ";
-      if (err.message.includes("Failed to fetch")) {
-        errorMessage = "Cannot connect to server. Please check if the server is running.";
-      } else if (err.message.includes("network")) {
-        errorMessage = "Network error. Please check your internet connection.";
-      } else {
-        errorMessage += "Error: " + err.message;
-      }
-
-      // Show error with typing effect too
-      await createTypingEffect(errorMessage);
-      saveMessage({ sender: "ai", text: errorMessage });
-      playNotificationSound();
-    }
-  }
-
-  // ✅ Helper function for fallback
   function createAiBubble(text) {
     const row = createElement("div", { className: "chat-ai-row" });
 
@@ -3731,13 +3238,151 @@ document.head.appendChild(gsapScript);
 
     return row;
   }
+
+  window.hideChatboxInline = function() {
+    const el = document.querySelector(".chatbox-inline");
+    if (el) el.style.display = "none";
+  };
+
+  window.sendMessage = async function() {
+    if (!elements.chatInput) return;
+
+    const message = elements.chatInput.value.trim();
+    if (!message) {
+      elements.chatInput.style.borderColor = "#ef4444";
+      setTimeout(() => {
+        elements.chatInput.style.borderColor = "";
+      }, 500);
+      return;
+    }
+
+    if (message.length > 5000) {
+      alert("Message is too long. Please keep it under 5000 characters.");
+      return;
+    }
+
+    const sendButton = document.querySelector(".conversation-send");
+    if (sendButton) {
+      sendButton.disabled = true;
+      sendButton.style.opacity = "0.5";
+      sendButton.style.cursor = "not-allowed";
+    }
+
+    if (isOutOfScope(message)) {
+      chatMode = "livechat";
+      connectToLiveChat();
+      addSystemMessage("Out-of-scope question detected. Connecting to live agent... ⏳");
+    }
+
+    const intros = document.querySelectorAll(".chatbox-inline, .welcome-pills, .welcome-info-box");
+    intros.forEach((intro) => {
+      if (intro) intro.style.display = "none";
+    });
+
+    const userBubble = createElement("div", { className: "chat-bubble user" });
+    userBubble.textContent = message;
+    elements.conversationBody.appendChild(userBubble);
+    elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
+
+    elements.chatInput.value = "";
+    elements.chatInput.style.height = "auto";
+    elements.chatInput.style.height = "30px";
+    elements.chatInput.focus();
+
+    const inputPreview = document.getElementById("inputPreview");
+    if (inputPreview) {
+      inputPreview.innerHTML = "";
+    }
+
+    saveMessage({ sender: "user", text: message });
+    sessionUserMessages++;
+
+    if (chatMode === "livechat" && socket && socket.connected) {
+      socket.emit("sendLiveChat", { text: message, user: "Mughal" });
+      addSystemMessage("Message sent to agent. Waiting for response...");
+    } else {
+      await simulateAiResponse(message);
+    }
+
+    if (sendButton) {
+      sendButton.disabled = false;
+      sendButton.style.opacity = "1";
+      sendButton.style.cursor = "pointer";
+    }
+  };
+
+  async function simulateAiResponse(userMessage) {
+    if (chatMode === "livechat") {
+      addSystemMessage("Live mode active – AI silent until agent allows.");
+      return;
+    }
+
+    const typingDiv = createElement("div", { className: "typing" });
+    typingDiv.innerHTML = "<span></span><span></span><span></span>";
+    elements.conversationBody.appendChild(typingDiv);
+    elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
+
+    try {
+      let sessionKey = localStorage.getItem("chat_session_key");
+      if (!sessionKey) {
+        sessionKey = "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem("chat_session_key", sessionKey);
+      }
+
+      const url = `${CONFIG.AI_BASE_URL}?ai_text_model=${CONFIG.AI_TEXT_MODEL}&comp=${CONFIG.COMP}&query=${encodeURIComponent(userMessage)}&session_key=${sessionKey}&api_key=${CONFIG.API_KEY}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+
+      typingDiv.remove();
+
+      let aiReply = data.response || "I'm sorry, I couldn't process that. Please try again.";
+      
+      if (isOutOfScope(aiReply)) {
+        chatMode = "livechat";
+        connectToLiveChat();
+        addSystemMessage("AI detected out-of-scope. Connecting to agent...");
+        typingDiv.remove();
+        return;
+      }
+
+      const cleanReply = aiReply.trim();
+
+      await createTypingEffect(cleanReply, 5);
+
+      saveMessage({ sender: "ai", text: cleanReply });
+      playNotificationSound();
+
+      if (data.session_key) {
+        localStorage.setItem("chat_session_key", data.session_key);
+      }
+
+      checkMessageCountAndToggleAssistantInfo();
+    } catch (err) {
+      typingDiv.remove();
+      console.error("❌ Error getting AI response:", err);
+
+      let errorMessage = "Sorry, I'm having trouble responding. ";
+      if (err.message.includes("Failed to fetch")) {
+        errorMessage = "Cannot connect to server. Please check your internet connection.";
+      } else if (err.message.includes("network")) {
+        errorMessage = "Network error. Please check your internet connection.";
+      } else {
+        errorMessage += "Error: " + err.message;
+      }
+
+      await createTypingEffect(errorMessage);
+      saveMessage({ sender: "ai", text: errorMessage });
+      playNotificationSound();
+    }
+  }
+
   function setupChatInputEvents() {
     if (!elements.chatInput) return;
 
     const autoResize = () => {
       elements.chatInput.style.height = "auto";
-      elements.chatInput.style.height =
-        Math.min(elements.chatInput.scrollHeight, 160) + "px";
+      elements.chatInput.style.height = Math.min(elements.chatInput.scrollHeight, 160) + "px";
     };
 
     elements.chatInput.addEventListener("input", autoResize);
@@ -3766,7 +3411,7 @@ document.head.appendChild(gsapScript);
     toggleShadow();
   }
 
-  window.toggleMoreMenu = function () {
+  window.toggleMoreMenu = function() {
     const menu = document.getElementById("moreMenu");
     if (!menu) return;
 
@@ -3787,11 +3432,9 @@ document.head.appendChild(gsapScript);
     }
   };
 
-  window.rateHeaderFeedback = function (value) {
+  window.rateHeaderFeedback = function(value) {
     const upBtn = document.querySelector("#ratingButtons button:first-child i");
-    const downBtn = document.querySelector(
-      "#ratingButtons button:last-child i",
-    );
+    const downBtn = document.querySelector("#ratingButtons button:last-child i");
     if (!upBtn || !downBtn) return;
 
     if (value === "up") {
@@ -3807,12 +3450,10 @@ document.head.appendChild(gsapScript);
     }
   };
 
-  // Yeh existing function hai, isme sirf condition change karo
-  window.toggleAssistantInfo = function () {
+  window.toggleAssistantInfo = function() {
     const raw = localStorage.getItem(CHAT_MESSAGES_KEY) || "[]";
     const messages = JSON.parse(raw);
 
-    // YEH LINE CHANGE KARO: 5 se 3 kar do
     if (messages.length < 3) {
       return;
     }
@@ -3825,57 +3466,62 @@ document.head.appendChild(gsapScript);
 
     if (isAssistantInfoShown) {
       assistantInfo.style.display = "block";
-      gsap.fromTo(
-        assistantInfo,
-        { opacity: 0, height: 0 },
-        { opacity: 1, height: "auto", duration: 0.5, ease: "bounce.out" },
-      );
-      gsap.to(card, {
-        y: 30,
-        scale: "1.05",
-        duration: 0.6,
-        ease: "bounce.out",
-      });
+      if (window.gsap) {
+        window.gsap.fromTo(
+          assistantInfo,
+          { opacity: 0, height: 0 },
+          { opacity: 1, height: "auto", duration: 0.5, ease: "bounce.out" }
+        );
+        window.gsap.to(card, {
+          y: 30,
+          scale: "1.05",
+          duration: 0.6,
+          ease: "bounce.out",
+        });
+      }
       ratingButtons.style.display = "flex";
     } else {
-      gsap.to(assistantInfo, {
-        opacity: 0,
-        height: 0,
-        duration: 0.3,
-        ease: "power2.in",
-        onComplete: () => {
-          assistantInfo.style.display = "none";
-          ratingButtons.style.display = "none";
-          gsap.fromTo(
-            card,
-            { y: 0 },
-            {
-              y: -20,
-              duration: 0.2,
-              scale: "1",
-              ease: "power2.out",
-              onComplete: () => {
-                gsap.to(card, {
-                  y: 0,
-                  duration: 0.1,
-                  ease: "elastic.out(1.2,0.75)",
-                });
-              },
-            },
-          );
-        },
-      });
+      if (window.gsap) {
+        window.gsap.to(assistantInfo, {
+          opacity: 0,
+          height: 0,
+          duration: 0.3,
+          ease: "power2.in",
+          onComplete: () => {
+            assistantInfo.style.display = "none";
+            ratingButtons.style.display = "none";
+            window.gsap.fromTo(
+              card,
+              { y: 0 },
+              {
+                y: -20,
+                duration: 0.2,
+                scale: "1",
+                ease: "power2.out",
+                onComplete: () => {
+                  window.gsap.to(card, {
+                    y: 0,
+                    duration: 0.1,
+                    ease: "elastic.out(1.2,0.75)",
+                  });
+                },
+              }
+            );
+          },
+        });
+      } else {
+        assistantInfo.style.display = "none";
+        ratingButtons.style.display = "none";
+      }
     }
   };
 
-  // Yeh function bhi change karo
   function checkMessageCountAndToggleAssistantInfo() {
     try {
       const raw = localStorage.getItem(CHAT_MESSAGES_KEY) || "[]";
       const messages = JSON.parse(raw);
       const messageCount = messages.length;
 
-      // YEH LINE CHANGE KARO: 5 se 3 kar do
       if (messageCount >= 3) {
         if (!isAssistantInfoShown) {
           const assistantInfo = document.getElementById("assistantInfo");
@@ -3898,18 +3544,16 @@ document.head.appendChild(gsapScript);
     }
   }
 
-  window.toggleEmojiPicker = function () {
+  window.toggleEmojiPicker = function() {
     const picker = document.getElementById("emojiPicker");
     if (!picker) return;
     picker.style.display = picker.style.display === "flex" ? "none" : "flex";
   };
 
-  window.addEmoji = function (emoji) {
+  window.addEmoji = function(emoji) {
     if (!elements.chatInput) return;
-    const start =
-      elements.chatInput.selectionStart || elements.chatInput.value.length;
-    const end =
-      elements.chatInput.selectionEnd || elements.chatInput.value.length;
+    const start = elements.chatInput.selectionStart || elements.chatInput.value.length;
+    const end = elements.chatInput.selectionEnd || elements.chatInput.value.length;
     const value = elements.chatInput.value;
     elements.chatInput.value = value.slice(0, start) + emoji + value.slice(end);
     const pos = start + emoji.length;
@@ -3920,27 +3564,26 @@ document.head.appendChild(gsapScript);
     if (picker) picker.style.display = "none";
   };
 
-  window.openCloseConfirm = function () {
+  window.openCloseConfirm = function() {
     const overlay = document.getElementById("closeOverlay");
     if (overlay) overlay.style.display = "flex";
   };
 
-  window.hideCloseConfirm = function () {
+  window.hideCloseConfirm = function() {
     const overlay = document.getElementById("closeOverlay");
     if (overlay) overlay.style.display = "none";
   };
 
-  window.confirmCloseChat = function () {
+  window.confirmCloseChat = function() {
     hideCloseConfirm();
     closeFullChat();
   };
 
-  window.openEmailSubscription = function () {
+  window.openEmailSubscription = function() {
     const overlay = document.getElementById("emailSubscriptionOverlay");
     const menu = document.getElementById("moreMenu");
     if (overlay) {
       overlay.style.display = "flex";
-      // Add show class for animation
       setTimeout(() => {
         overlay.classList.add("show");
       }, 10);
@@ -3948,7 +3591,7 @@ document.head.appendChild(gsapScript);
     if (menu) menu.classList.remove("show");
   };
 
-  window.hideEmailSubscription = function () {
+  window.hideEmailSubscription = function() {
     const overlay = document.getElementById("emailSubscriptionOverlay");
     const form = document.getElementById("emailSubscriptionForm");
     if (overlay) {
@@ -3960,7 +3603,7 @@ document.head.appendChild(gsapScript);
     if (form) form.reset();
   };
 
-  window.handleEmailSubscription = function (event) {
+  window.handleEmailSubscription = function(event) {
     event.preventDefault();
     const emailInput = document.getElementById("emailInput");
     const email = emailInput?.value.trim();
@@ -3970,25 +3613,21 @@ document.head.appendChild(gsapScript);
       return;
     }
 
-    // Email basic validation
     if (!email.includes('@') || !email.includes('.')) {
       alert("Please enter a valid email address.");
       return;
     }
 
-    console.log("Attempting to send email:", email); // Debug log
-
     let userextract = email.split("@");
     let username = userextract[0];
 
-    // Pehle API call, phir localStorage
     fetch('http://127.0.0.1:8000/api/subscribe', {
       method: "POST",
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      mode: 'cors', // Explicitly set mode
+      mode: 'cors',
       body: JSON.stringify({
         name: username,
         email: email,
@@ -4002,8 +3641,6 @@ document.head.appendChild(gsapScript);
         return response.json();
       })
       .then(data => {
-
-        // Ab localStorage mein save karo
         const subs = JSON.parse(localStorage.getItem("email_subscriptions") || "[]");
         if (!subs.includes(email)) {
           subs.push(email);
@@ -4018,32 +3655,24 @@ document.head.appendChild(gsapScript);
       });
   };
 
-  // === Feedback Modal Functions ===
-
-  window.openFeedbackModal = function (type = "positive") {
+  window.openFeedbackModal = function(type = "positive") {
     const overlay = document.getElementById("feedbackOverlay");
     const menu = document.getElementById("moreMenu");
 
     if (overlay) {
-      // Reset form
       document.getElementById("feedbackForm").reset();
       document.getElementById("feedbackText").value = "";
       document.getElementById("feedbackType").value = type;
 
-      // Remove active class from all buttons
       document.querySelectorAll(".feedback-type-btn").forEach((btn) => {
         btn.classList.remove("active");
       });
 
-      // Set active button based on type
-      const activeBtn = document.querySelector(
-        `.feedback-type-btn[data-type="${type}"]`,
-      );
+      const activeBtn = document.querySelector(`.feedback-type-btn[data-type="${type}"]`);
       if (activeBtn) {
         activeBtn.classList.add("active");
       }
 
-      // Update UI based on type
       const icon = document.getElementById("feedbackIcon");
       const title = document.getElementById("feedbackTitle");
       const description = document.getElementById("feedbackDescription");
@@ -4067,7 +3696,6 @@ document.head.appendChild(gsapScript);
       }
 
       overlay.style.display = "flex";
-      // Add show class for animation
       setTimeout(() => {
         overlay.classList.add("show");
       }, 10);
@@ -4076,7 +3704,7 @@ document.head.appendChild(gsapScript);
     if (menu) menu.classList.remove("show");
   };
 
-  window.hideFeedbackModal = function () {
+  window.hideFeedbackModal = function() {
     const overlay = document.getElementById("feedbackOverlay");
     const form = document.getElementById("feedbackForm");
     if (overlay) {
@@ -4084,7 +3712,6 @@ document.head.appendChild(gsapScript);
       setTimeout(() => {
         overlay.style.display = "none";
         if (form) form.reset();
-        // Reset to default state
         document.querySelectorAll(".feedback-type-btn").forEach((btn) => {
           btn.classList.remove("active");
         });
@@ -4093,7 +3720,7 @@ document.head.appendChild(gsapScript);
     }
   };
 
-  window.handleFeedbackSubmit = function (event) {
+  window.handleFeedbackSubmit = function(event) {
     event.preventDefault();
     const feedbackType = document.getElementById("feedbackType").value;
     const feedbackText = document.getElementById("feedbackText").value.trim();
@@ -4109,43 +3736,31 @@ document.head.appendChild(gsapScript);
     }
 
     try {
-      // Get existing feedback or create new array
       const raw = localStorage.getItem(USER_FEEDBACK_KEY) || "[]";
       const feedback = JSON.parse(raw);
 
-      // Add new feedback
       feedback.push({
         type: feedbackType,
         text: feedbackText,
         timestamp: new Date().toISOString(),
       });
 
-      // Save back to localStorage
       localStorage.setItem(USER_FEEDBACK_KEY, JSON.stringify(feedback));
 
-      // Show success message
       let message = "Thank you for your feedback!";
       if (feedbackType === "positive") {
-        message =
-          "🎉 Thank you for your positive feedback! We're glad you had a good experience.";
+        message = "🎉 Thank you for your positive feedback! We're glad you had a good experience.";
       } else if (feedbackType === "negative") {
-        message =
-          "🙏 Thank you for your honest feedback. We'll use this to improve our service.";
+        message = "🙏 Thank you for your honest feedback. We'll use this to improve our service.";
       } else if (feedbackType === "suggestion") {
-        message =
-          "💡 Thank you for your suggestion! We'll consider it for future improvements.";
+        message = "💡 Thank you for your suggestion! We'll consider it for future improvements.";
       }
 
       alert(message);
       window.hideFeedbackModal();
 
-      // Reset header rating buttons to default state
-      const upBtn = document.querySelector(
-        "#ratingButtons button:first-child i",
-      );
-      const downBtn = document.querySelector(
-        "#ratingButtons button:last-child i",
-      );
+      const upBtn = document.querySelector("#ratingButtons button:first-child i");
+      const downBtn = document.querySelector("#ratingButtons button:last-child i");
       if (upBtn && downBtn) {
         upBtn.classList.remove("fa-solid");
         upBtn.classList.add("fa-regular");
@@ -4175,9 +3790,7 @@ document.head.appendChild(gsapScript);
     const enabled = isSoundEnabled();
 
     if (soundIcon) {
-      soundIcon.className = enabled
-        ? "fa-solid fa-volume-high"
-        : "fa-solid fa-volume-xmark";
+      soundIcon.className = enabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark";
     }
     if (soundText) {
       soundText.textContent = "Sound";
@@ -4187,11 +3800,10 @@ document.head.appendChild(gsapScript);
     }
   }
 
-  window.handlePlusClick = function () {
+  window.handlePlusClick = function() {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept =
-      "video/*,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    input.accept = "video/*,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     input.multiple = true;
 
     input.onchange = (event) => {
@@ -4204,20 +3816,17 @@ document.head.appendChild(gsapScript);
           className: "file-preview-item",
         });
 
-        const removeBtn = createElement(
-          "div",
-          {
-            className: "remove-btn",
-            onclick: (e) => {
-              e.stopPropagation();
-              previewItem.remove();
-              if (preview.children.length === 0) {
-                updateTextareaLayout();
-              }
-            },
-          },
-          ["×"],
-        );
+        const removeBtn = createElement("div", {
+          className: "remove-btn",
+        }, ["×"]);
+
+        removeBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          previewItem.remove();
+          if (preview.children.length === 0) {
+            updateTextareaLayout();
+          }
+        });
 
         previewItem.appendChild(removeBtn);
 
@@ -4255,7 +3864,7 @@ document.head.appendChild(gsapScript);
           previewItem.appendChild(iconContainer);
         }
 
-        previewItem.onclick = () => window.open(url, "_blank");
+        previewItem.addEventListener("click", () => window.open(url, "_blank"));
         preview.appendChild(previewItem);
       });
 
@@ -4287,15 +3896,12 @@ document.head.appendChild(gsapScript);
     }
   }
 
-  window.resetChat = function () {
+  window.resetChat = function() {
     localStorage.removeItem(CHAT_MESSAGES_KEY);
     if (elements.conversationBody) {
-      const welcomeSection =
-        elements.conversationBody.querySelector(".chatbox-inline");
-      const welcomeInfo =
-        elements.conversationBody.querySelector(".welcome-info-box");
-      const welcomePills =
-        elements.conversationBody.querySelector(".welcome-pills");
+      const welcomeSection = elements.conversationBody.querySelector(".chatbox-inline");
+      const welcomeInfo = elements.conversationBody.querySelector(".welcome-info-box");
+      const welcomePills = elements.conversationBody.querySelector(".welcome-pills");
 
       elements.conversationBody.innerHTML = "";
       if (welcomeSection) elements.conversationBody.appendChild(welcomeSection);
@@ -4347,7 +3953,7 @@ document.head.appendChild(gsapScript);
 
     if (!pillsContainer || !chatInput) return;
 
-    pillsContainer.addEventListener("click", function (e) {
+    pillsContainer.addEventListener("click", function(e) {
       if (e.target.tagName === "BUTTON") {
         const text = e.target.innerText.trim();
         chatInput.value = text;
@@ -4358,84 +3964,62 @@ document.head.appendChild(gsapScript);
     });
   }
 
-
   // === Initialize on DOM Load ===
   function initializeApp() {
     try {
-      console.log("Initializing app...");
       initializeChat();
 
-      // ✅ YEH LINE ADD KARO - Welcome message check karo
       setTimeout(() => {
         const welcomeShown = localStorage.getItem('welcome_message_shown');
-        const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+        const messages = JSON.parse(localStorage.getItem(CHAT_MESSAGES_KEY) || '[]');
 
-        console.log("Welcome shown:", welcomeShown);
-        console.log("Messages count:", messages.length);
-
-        // Agar welcome message nahi dikhaya aur koi message nahi hai to dikhao
         if (!welcomeShown && messages.length === 0) {
-          console.log("Conditions met, showing welcome message");
           showSimpleWelcomeMessage();
-        } else {
-          console.log("Welcome message already shown or messages exist");
         }
-      }, 3000); // 3 second delay after initialization
-
+      }, 3000);
     } catch (error) {
       console.error("❌ Failed to initialize chat widget:", error);
     }
   }
 
-  // Ye line already hogi, change karne ki zaroorat nahi
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initializeApp);
   } else {
     setTimeout(initializeApp, 100);
   }
-  // Close more menu when clicking outside
-  // Page load par chalao
-  document.addEventListener("DOMContentLoaded", function () {
-    // Assistant info ko hide karo
+
+  document.addEventListener("DOMContentLoaded", function() {
     const assistantInfo = document.getElementById("assistantInfo");
     const ratingButtons = document.getElementById("ratingButtons");
 
     if (assistantInfo) assistantInfo.style.display = "none";
     if (ratingButtons) ratingButtons.style.display = "none";
 
-    // Phir check karo ke 3 messages hain ya nahi
     checkMessageCountAndToggleAssistantInfo();
   });
 
-  // Handle window resize
   window.addEventListener("resize", updateTextareaLayout);
 
   // Export functions to global scope
   window.ChatWidget = {
-    openProductExpert,
-    minimizeChat,
-    openFullChat,
-    sendMessage,
-    resetChat,
-    openFeedbackModal,
-    hideFeedbackModal,
-    handleFeedbackSubmit,
+    openProductExpert: window.openProductExpert,
+    minimizeChat: window.minimizeChat,
+    openFullChat: window.openFullChat,
+    sendMessage: window.sendMessage,
+    resetChat: window.resetChat,
+    openFeedbackModal: window.openFeedbackModal,
+    hideFeedbackModal: window.hideFeedbackModal,
+    handleFeedbackSubmit: window.handleFeedbackSubmit,
   };
 
-  // ✅ YEH EVENT LISTENER ADD KARO (file ke end mein)
-  document.addEventListener("DOMContentLoaded", function () {
-    console.log("DOM fully loaded");
-
-    // Extra check for welcome message
+  document.addEventListener("DOMContentLoaded", function() {
     setTimeout(() => {
       const welcomeShown = localStorage.getItem('welcome_message_shown');
-      const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+      const messages = JSON.parse(localStorage.getItem(CHAT_MESSAGES_KEY) || '[]');
 
       if (!welcomeShown && messages.length === 0) {
-        console.log("DOMContentLoaded: Showing welcome message");
         showSimpleWelcomeMessage();
       }
-    }, 4000); // 4 second delay
+    }, 4000);
   });
-
 })();
