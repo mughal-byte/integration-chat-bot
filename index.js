@@ -1,4 +1,4 @@
-// script.js - Complete Chat Widget with DOM Creation (FIXED VERSION)
+// script.js - Complete Chat Widget with DOM Creation + Agent Connect Feature (FIXED VERSION)
 
 // Load GSAP dynamically
 // Bootstrap
@@ -21,12 +21,19 @@ gsapScript.crossOrigin = "anonymous";
 gsapScript.referrerPolicy = "no-referrer";
 document.head.appendChild(gsapScript);
 
+// Load Socket.IO
+const socketScript = document.createElement("script");
+socketScript.src = "https://cdn.socket.io/4.7.2/socket.io.min.js";
+document.head.appendChild(socketScript);
+
 (function () {
   // Variables declaration
   let getWelcomeMessage = "";
   let CONFIG = {};
-  let chatMode = "chatbot"; // Default mode
-  let socket = null; // For live chat
+  let chatMode = "ai"; // "ai" ya "agent"
+  let socket = null;
+  let currentAgentId = null;
+  let userId = null;
 
   // === DOM Elements Storage ===
   const elements = {};
@@ -59,6 +66,12 @@ document.head.appendChild(gsapScript);
       };
 
       startChatBot();
+      
+      // Initialize socket connection
+      setTimeout(() => {
+        connectChatbotSocket();
+      }, 2000);
+      
     } catch (error) {
       console.error("Error in init:", error);
       getWelcomeMessage = "Welcome! How can I help you?";
@@ -72,6 +85,96 @@ document.head.appendChild(gsapScript);
 
   // Call init
   init();
+
+  // === SOCKET CONNECTION FOR AGENT ===
+  function connectChatbotSocket() {
+    if (socket && socket.connected) return;
+    
+    try {
+      socket = io("http://localhost:3000", {
+        transports: ['websocket'],
+        reconnection: true
+      });
+      
+      // Get or create user ID
+      userId = localStorage.getItem('chat_user_id');
+      if (!userId) {
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        localStorage.setItem('chat_user_id', userId);
+      }
+      
+      socket.on('connect', () => {
+        console.log("✅ Chatbot connected to agent server");
+        socket.emit('login', userId);
+      });
+      
+      socket.on('login_success', (data) => {
+        console.log("✅ Logged in as:", data.username);
+      });
+      
+      socket.on('agent_request_received', (data) => {
+        addSystemMessage(data.message);
+      });
+      
+      socket.on('agent_connected', (data) => {
+        console.log("✅ Agent connected:", data);
+        chatMode = "agent";
+        currentAgentId = data.agentId;
+        
+        addSystemMessage(`🟢 ${data.message}`);
+        updateModeUI();
+        
+        // Hide welcome messages
+        const intro = document.querySelector(".chatbox-inline");
+        const welcomeInfo = document.querySelector(".welcome-info-box");
+        const welcomePills = document.querySelector(".welcome-pills");
+        
+        if (intro) intro.style.display = "none";
+        if (welcomeInfo) welcomeInfo.style.display = "none";
+        if (welcomePills) welcomePills.style.display = "none";
+      });
+      
+      socket.on('receive_message', (data) => {
+        if (data.from && data.from !== userId && chatMode === "agent") {
+          // Agent message
+          showAgentMessage(data.message, data.from);
+          saveMessage({ sender: "agent", text: data.message, agentId: data.from });
+        }
+      });
+      
+      socket.on('agent_left', () => {
+        addSystemMessage("Agent left the chat");
+        chatMode = "ai";
+        currentAgentId = null;
+        updateModeUI();
+      });
+      
+      socket.on('agent_disconnected', () => {
+        addSystemMessage("Agent disconnected");
+        chatMode = "ai";
+        currentAgentId = null;
+        updateModeUI();
+      });
+      
+      socket.on('resume_ai', () => {
+        addSystemMessage("Agent resumed AI assistant");
+        chatMode = "ai";
+        currentAgentId = null;
+        updateModeUI();
+      });
+      
+      socket.on('display_typing', (user) => {
+        showAgentTyping(true);
+      });
+      
+      socket.on('hide_typing', () => {
+        showAgentTyping(false);
+      });
+      
+    } catch (error) {
+      console.error("Socket connection error:", error);
+    }
+  }
 
   // === CSS Styles ===
   function addChatWidgetStyles() {
@@ -98,6 +201,8 @@ document.head.appendChild(gsapScript);
             --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.1);
             --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.15);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --whatsapp-green: #25D366;
+            --whatsapp-teal: #075E54;
         }
 
         /* Chat Container Styles */
@@ -169,6 +274,18 @@ document.head.appendChild(gsapScript);
         
         .conv-icons span:hover {
             opacity: 1;
+        }
+
+        /* Mode Indicator */
+        .mode-indicator {
+            position: fixed;
+            bottom: 90px;
+            right: 30px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 1200;
+            color: white;
         }
 
         /* Text Support Card */
@@ -409,6 +526,13 @@ document.head.appendChild(gsapScript);
             border-radius: 24px;
         }
         
+        .chat-bubble.agent {
+            margin: 0;
+            background: #DCF8C6;
+            color: var(--text-primary);
+            border-radius: 24px;
+        }
+        
         .ai-icon {
             width: 22px;
             height: 22px;
@@ -464,6 +588,15 @@ document.head.appendChild(gsapScript);
                 transform: translateY(-3px);
                 opacity: 1;
             }
+        }
+
+        /* Agent Typing */
+        .agent-typing {
+            text-align: left;
+            font-size: 12px;
+            color: var(--whatsapp-green);
+            margin: 5px 0;
+            padding-left: 45px;
         }
 
         .input-content {
@@ -950,6 +1083,15 @@ document.head.appendChild(gsapScript);
             transform: translateX(18px);
         }
         
+        /* System Message */
+        .system-message {
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            margin: 10px 0;
+            font-style: italic;
+        }
+        
         /* Responsive Styles */
         @media (max-width: 1200px) {
             .chat-container,
@@ -1018,6 +1160,11 @@ document.head.appendChild(gsapScript);
             .feedback-modal {
                 width: 90%;
                 padding: 24px;
+            }
+            
+            .mode-indicator {
+                bottom: 80px;
+                right: 20px;
             }
         }
         
@@ -1116,6 +1263,12 @@ document.head.appendChild(gsapScript);
             
             .feedback-modal {
                 padding: 20px;
+            }
+            
+            .mode-indicator {
+                bottom: 70px;
+                right: 15px;
+                font-size: 10px;
             }
         }
         
@@ -2878,47 +3031,25 @@ document.head.appendChild(gsapScript);
   }
 
   function isOutOfScope(query) {
-    const keywords = ["agent", "human help", "live support", "out of syllabus", "connect to agent", "real person"];
-    return keywords.some(word => query.toLowerCase().includes(word));
-  }
-
-  function connectToLiveChat() {
-    if (socket && socket.connected) return;
+    const keywords = [
+      "agent", "human", "live person", "real person", "customer support",
+      "talk to agent", "connect to agent", "live agent", "human help",
+      "out of syllabus", "out of scope", "bahar ka sawal", "live support",
+      "order status", "refund", "payment issue", "technical problem",
+      "complaint", "shipping", "delivery", "account issue", "forgot password",
+      "bug", "error", "not working", "problem", "issue", "help needed",
+      "speak to human", "real human", "agent se baat", "customer care"
+    ];
     
-    // Simulate socket connection
-    socket = {
-      connected: true,
-      emit: function(event, data) {
-        console.log("Live chat message:", data);
-        // Simulate agent response after 2 seconds
-        setTimeout(() => {
-          if (this.onreceive) {
-            this.onreceive({ text: "Agent: How can I help you?" });
-          }
-        }, 2000);
-      },
-      onreceive: null
-    };
-    
-    socket.onreceive = function(data) {
-      if (data && data.text) {
-        createTypingEffect(data.text).then(() => {
-          saveMessage({ sender: "agent", text: data.text });
-          playNotificationSound();
-        });
-
-        if (data.text.toLowerCase().includes("resume ai") || data.text.toLowerCase().includes("back to ai")) {
-          chatMode = "chatbot";
-          addSystemMessage("Agent allowed – switching back to AI assistant.");
-        }
-      }
-    };
+    const lowerMsg = query.toLowerCase();
+    return keywords.some(word => lowerMsg.includes(word));
   }
 
   function addSystemMessage(text) {
     if (!elements.conversationBody) return;
     
     const systemDiv = createElement("div", {
+      className: "system-message",
       style: {
         textAlign: "center",
         fontSize: "12px",
@@ -2931,6 +3062,65 @@ document.head.appendChild(gsapScript);
     elements.conversationBody.appendChild(systemDiv);
     elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
   }
+
+  function showAgentMessage(text, agentName = "Agent") {
+    if (!elements.conversationBody) return;
+    
+    const row = createElement("div", { className: "chat-ai-row" });
+    
+    const avatar = createElement("div", {
+      className: "chat-ai-avatar",
+      style: { background: "#25D366" }
+    });
+    avatar.innerHTML = '<i class="fa-solid fa-headset" style="color:white; font-size:14px;"></i>';
+    
+    const bubble = createElement("div", {
+      className: "chat-bubble agent",
+      style: { background: "#DCF8C6" }
+    });
+    const innerDiv = createElement("div", { className: "ai-bubble-inner" });
+    const textSpan = createElement("span", { className: "ai-text" });
+    textSpan.innerHTML = `<strong>${agentName}:</strong> ${text}`;
+    
+    innerDiv.appendChild(textSpan);
+    bubble.appendChild(innerDiv);
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    
+    elements.conversationBody.appendChild(row);
+    elements.conversationBody.scrollTop = elements.conversationBody.scrollHeight;
+  }
+
+  function showAgentTyping(show) {
+    let indicator = document.getElementById("agentTyping");
+    if (!indicator && show) {
+      indicator = createElement("div", {
+        id: "agentTyping",
+        className: "agent-typing"
+      }, ["👤 Agent typing..."]);
+      elements.conversationBody?.appendChild(indicator);
+    }
+    
+    if (indicator) {
+      indicator.style.display = show ? "block" : "none";
+      if (!show) indicator.remove();
+    }
+  }
+
+  // function updateModeUI() {
+  //   let indicator = document.getElementById("modeIndicator");
+  //   if (!indicator) {
+  //     indicator = createElement("div", {
+  //       id: "modeIndicator",
+  //       className: "mode-indicator"
+  //     });
+  //     document.body.appendChild(indicator);
+  //   }
+    
+  //   indicator.textContent = chatMode === "ai" ? "🤖 AI Mode" : "👤 Agent Mode";
+  //   indicator.style.background = chatMode === "ai" ? "#3255a0" : "#25D366";
+  //   indicator.style.color = "white";
+  // }
 
   // === Main Functions ===
   function initializeChat() {
@@ -3035,18 +3225,19 @@ document.head.appendChild(gsapScript);
     } else if (msg.sender === "agent") {
       const row = createElement("div", { className: "chat-ai-row" });
 
-      const avatar = createElement("div", { className: "chat-ai-avatar" });
-      avatar.appendChild(
-        createElement("img", {
-          src: "https://i.postimg.cc/ZR9KxqF8/Vector.png",
-          alt: "Agent",
-        })
-      );
+      const avatar = createElement("div", {
+        className: "chat-ai-avatar",
+        style: { background: "#25D366" }
+      });
+      avatar.innerHTML = '<i class="fa-solid fa-headset" style="color:white; font-size:14px;"></i>';
 
-      const bubble = createElement("div", { className: "chat-bubble ai", style: { background: "#d1fae5" } });
+      const bubble = createElement("div", {
+        className: "chat-bubble agent",
+        style: { background: "#DCF8C6" }
+      });
       const innerDiv = createElement("div", { className: "ai-bubble-inner" });
       const textSpan = createElement("span", { className: "ai-text" });
-      textSpan.textContent = msg.text;
+      textSpan.innerHTML = `<strong>${msg.agentId || "Agent"}:</strong> ${msg.text}`;
 
       innerDiv.appendChild(textSpan);
       bubble.appendChild(innerDiv);
@@ -3261,19 +3452,6 @@ document.head.appendChild(gsapScript);
       return;
     }
 
-    const sendButton = document.querySelector(".conversation-send");
-    if (sendButton) {
-      sendButton.disabled = true;
-      sendButton.style.opacity = "0.5";
-      sendButton.style.cursor = "not-allowed";
-    }
-
-    if (isOutOfScope(message)) {
-      chatMode = "livechat";
-      connectToLiveChat();
-      addSystemMessage("Out-of-scope question detected. Connecting to live agent... ⏳");
-    }
-
     const intros = document.querySelectorAll(".chatbox-inline, .welcome-pills, .welcome-info-box");
     intros.forEach((intro) => {
       if (intro) intro.style.display = "none";
@@ -3297,24 +3475,50 @@ document.head.appendChild(gsapScript);
     saveMessage({ sender: "user", text: message });
     sessionUserMessages++;
 
-    if (chatMode === "livechat" && socket && socket.connected) {
-      socket.emit("sendLiveChat", { text: message, user: "Mughal" });
-      addSystemMessage("Message sent to agent. Waiting for response...");
+    if (chatMode === "agent") {
+      // Send to agent
+      if (socket && socket.connected && currentAgentId) {
+        socket.emit('send_message', {
+          to: currentAgentId,
+          message: message,
+          from: userId
+        });
+        addSystemMessage("📤 Message sent to agent");
+      } else {
+        addSystemMessage("❌ Agent disconnected. Switching to AI mode.");
+        chatMode = "ai";
+        currentAgentId = null;
+        updateModeUI();
+        await simulateAiResponse(message);
+      }
     } else {
-      await simulateAiResponse(message);
-    }
-
-    if (sendButton) {
-      sendButton.disabled = false;
-      sendButton.style.opacity = "1";
-      sendButton.style.cursor = "pointer";
+      // Check if out of scope
+      if (isOutOfScope(message)) {
+        // Request agent
+        if (!socket || !socket.connected) {
+          connectChatbotSocket();
+        }
+        
+        if (socket && socket.connected) {
+          socket.emit('request_agent', {
+            username: userId,
+            message: message
+          });
+          addSystemMessage("🔄 Connecting to agent...");
+        } else {
+          addSystemMessage("❌ Agent server not available. Using AI mode.");
+          await simulateAiResponse(message);
+        }
+      } else {
+        // Normal AI response
+        await simulateAiResponse(message);
+      }
     }
   };
 
   async function simulateAiResponse(userMessage) {
-    if (chatMode === "livechat") {
-      addSystemMessage("Live mode active – AI silent until agent allows.");
-      return;
+    if (chatMode === "agent") {
+      return; // Don't respond if in agent mode
     }
 
     const typingDiv = createElement("div", { className: "typing" });
@@ -3337,14 +3541,6 @@ document.head.appendChild(gsapScript);
       typingDiv.remove();
 
       let aiReply = data.response || "I'm sorry, I couldn't process that. Please try again.";
-      
-      if (isOutOfScope(aiReply)) {
-        chatMode = "livechat";
-        connectToLiveChat();
-        addSystemMessage("AI detected out-of-scope. Connecting to agent...");
-        typingDiv.remove();
-        return;
-      }
 
       const cleanReply = aiReply.trim();
 
@@ -4010,6 +4206,16 @@ document.head.appendChild(gsapScript);
     openFeedbackModal: window.openFeedbackModal,
     hideFeedbackModal: window.hideFeedbackModal,
     handleFeedbackSubmit: window.handleFeedbackSubmit,
+    getMode: () => chatMode,
+    connectToAgent: () => {
+      if (socket && socket.connected) {
+        socket.emit('request_agent', {
+          username: userId,
+          message: "Manual agent request"
+        });
+        addSystemMessage("🔄 Connecting to agent...");
+      }
+    }
   };
 
   document.addEventListener("DOMContentLoaded", function() {
