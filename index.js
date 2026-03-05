@@ -51,16 +51,16 @@ document.head.appendChild(socketScript);
 
   async function init() {
     try {
-      const response = await fetch("https://buildors.com/api/bot-config?ai_text_model=2&comp=15");
+      const response = await fetch("Your API key of side working");
       const data = await response.json();
 
       getWelcomeMessage = data.initial_message_before_chat || "Welcome! How can I help you?";
 
       CONFIG = {
-        AI_BASE_URL: "https://buildors.com/api/chat-text-bot",
-        AI_TEXT_MODEL: "2",
-        COMP: "15",
-        API_KEY: "buildor_555210",
+        AI_BASE_URL: "Your API name side here",
+        AI_TEXT_MODEL: "1",
+        COMP: "10",
+        API_KEY: "Your API Key here",
         WELCOME_MESSAGE: getWelcomeMessage,
         SESSION_KEY: "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
       };
@@ -4228,4 +4228,5 @@ document.head.appendChild(socketScript);
       }
     }, 4000);
   });
+
 })();
